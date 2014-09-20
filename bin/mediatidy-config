@@ -1,0 +1,41 @@
+#!/usr/bin/env coffee
+
+program = require 'commander'
+prompt = require 'prompt'
+Config = require '../lib/config'
+
+program
+  .option('-p, --path <movie directory>', 'the location where movies are stored')
+  .option('-y, --yes', 'accept all defaults to questions')
+
+program
+  .command('update')
+  .description("update configuration file at #{Config.file}")
+  .action ->
+    prompt.override = program.args[0]
+    prompt.message = "mediatidy".yellow
+    prompt.delimiter = ": ".green
+    prompt.properties =
+      path:
+        description: 'movie path'
+        message: 'enter path to movie files'
+        default: program.path
+        required: true
+
+    saveConfig = (result) ->
+      Config.set 'path', result?.path or program.path
+
+      Config.save (error) ->
+        console.log error.message if error?
+        console.log "saved mediatidy configuration to #{Config.file}"
+
+    unless program.yes?
+      prompt.start()
+      prompt.get ['path'], (error, result) ->
+        saveConfig result unless error?
+    else
+      saveConfig()
+
+program.parse process.argv
+
+program.help() if program.args.length is 0

@@ -1,0 +1,35 @@
+{
+  "private": true,
+  "preferGlobal": true,
+  "main": "index",
+  "name": "mediatidy",
+  "description": "Keep your media nice and Tidy!",
+  "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:tkdan235/mediatidy-cli.git"
+  },
+  "engines": {
+    "node": ">=0.10.0"
+  },
+  "directories": {
+    "bin": "bin",
+    "lib": "lib"
+  },
+  "dependencies": {
+    "commander": "^2.1.0",
+    "fs-extra": "^0.11.1",
+    "lodash": "^2.4.1",
+    "nconf": "^0.6.9",
+    "path": "^0.4.9",
+    "prompt": "^0.2.14"
+  },
+  "coffeelintConfig": {
+    "max_line_length": {
+      "name": "max_line_length",
+      "value": 120,
+      "level": "error",
+      "limitComments": true
+    }
+  }
+}

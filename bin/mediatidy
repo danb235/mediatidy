@@ -1,0 +1,14 @@
+#!/usr/bin/env coffee
+
+program = require 'commander'
+pkg = require '../package.json'
+path = require 'path'
+
+program
+  .version(pkg.version)
+  .command('movies <action>', 'perform movies <action> such as tidy')
+  .command('config <action>', 'perform config <action> such as update')
+
+program.parse(process.argv)
+
+program.help() if program.args.length is 0

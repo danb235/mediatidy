@@ -1,0 +1,26 @@
+#!/usr/bin/env coffee
+
+program = require 'commander'
+Config = require '../lib/config'
+Movies = require '../lib/movies'
+
+program.option('-a, --apiurl <apiurl>', 'API base URL')
+  .option('-c, --clientid <clientid>', 'OAuth2 Client ID')
+  .option('-s, --clientsecret <clientsecret>', 'OAuth2 Client secret')
+  .option('-j, --json', 'display results in JSON')
+
+program.command('update')
+  .description('get data for all albums or album matching <albumid>')
+  .action (albumid) ->
+    albumid ?= 0
+
+    album = new Albums Config.get('accessToken'), program.apiurl, albumid
+    album.get (response, body) ->
+      if program.json?
+        console.log JSON.stringify(body)
+      else
+        console.log body
+
+program.parse process.argv
+
+program.help() if program.args.length is 0
