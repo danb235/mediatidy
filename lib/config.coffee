@@ -5,7 +5,7 @@ _ = require 'lodash'
 
 class Config
   @file: """
-  #{process.env.HOME or process.env.HOMEPATH or process.env.USERPROFILE}/.mediatidy
+  #{process.env.HOME or process.env.HOMEPATH or process.env.USERPROFILE}/.mediatidy/config.json
   """
 
   @fileDefault: "../config.json"

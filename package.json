@@ -17,12 +17,15 @@
     "lib": "lib"
   },
   "dependencies": {
+    "colors": "^0.6.2",
     "commander": "^2.1.0",
     "fs-extra": "^0.11.1",
     "lodash": "^2.4.1",
     "nconf": "^0.6.9",
+    "node-dir": "^0.1.6",
     "path": "^0.4.9",
-    "prompt": "^0.2.14"
+    "prompt": "^0.2.14",
+    "sqlite3": "^2.2.7"
   },
   "coffeelintConfig": {
     "max_line_length": {

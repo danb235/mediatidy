@@ -10,16 +10,11 @@ program.option('-a, --apiurl <apiurl>', 'API base URL')
   .option('-j, --json', 'display results in JSON')
 
 program.command('update')
-  .description('get data for all albums or album matching <albumid>')
-  .action (albumid) ->
-    albumid ?= 0
-
-    album = new Albums Config.get('accessToken'), program.apiurl, albumid
-    album.get (response, body) ->
-      if program.json?
-        console.log JSON.stringify(body)
-      else
-        console.log body
+  .description('look for new movies')
+  .action () ->
+    movie = new Movies Config.get('path')
+    movie.update (response) ->
+      console.log response
 
 program.parse process.argv
 

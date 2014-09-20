@@ -1,26 +1,24 @@
+Data = require '../lib/data'
+colors = require('colors')
+dir = require('node-dir')
 
-class Albums
-  constructor: (@accessToken, @apiUrl, @album) ->
-    @requestData =
-      url: "#{@apiUrl}/3/albums.json"
-      json: true
-      form:
-        name: album
-      headers:
-        Authorization: "Bearer #{accessToken}"
 
-  get: (callback) ->
-    data =
-      url: if @album is 0 then "#{@apiUrl}/3/albums.json" else "#{@apiUrl}/3/albums/#{@album}/files.json"
-      json: true
-      headers:
-        Authorization: "Bearer #{@accessToken}"
+class Movies
+  constructor: (@path) ->
 
-    request.get data, (error, response, body) ->
-      callback? response, body
+  update: (callback) ->
+    response = 'donedone'
+    console.log "==> ".cyan.bold + "Looking for files in " + @path + "..."
 
-  post: (callback) ->
-    request.post @requestData, (error, response, body) ->
-      unless error? then callback? body else callback? error
+    # Get all files and directories in user defined path
+    dir.paths @path, (err, paths) ->
+      throw err  if err
+      console.log "files:", paths.files.length
+      console.log "subdirs:", paths.dirs.length
 
-module.exports = Albums
+      data = new Data paths.files, paths.dirs
+      data.insertRows paths.files, paths.dirs, (dataresponse) ->
+        console.log dataresponse
+        callback? response
+
+module.exports = Movies
