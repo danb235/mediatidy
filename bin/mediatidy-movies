@@ -4,6 +4,7 @@ program = require 'commander'
 Config = require '../lib/config'
 Movies = require '../lib/movies'
 colors = require 'colors'
+async = require 'async'
 
 program.option('-a, --apiurl <apiurl>', 'API base URL')
   .option('-c, --clientid <clientid>', 'OAuth2 Client ID')
@@ -15,10 +16,27 @@ program.command('update')
   .action () ->
     console.log '==> '.cyan.bold + 'updating database with current files and directories'
     movie = new Movies Config.get('path')
-    movie.update (files, dirs) ->
-      movie.dbUpdate files, dirs, ->
+
+    results = {}
+    async.series [
+      (callback) ->
+        movie.update (videoFiles, otherFiles, dirs) ->
+          results.videoFiles = videoFiles
+          results.otherFiles = otherFiles
+          results.dirs = dirs
+          callback null, "one"
+      (callback) ->
+        movie.dbUpdate results.videoFiles, results.otherFiles, results.dirs, ->
+          callback null, "two"
+      (callback) ->
+        movie.dbMetaUpdate ->
+          callback null, "three"
+      (callback) ->
         movie.dbRead (files) ->
-          console.log files
+          callback null, "four"
+    # optional callback
+    ], (err, results) ->
+      console.log 'Results:', results
 
 program.parse process.argv
 
