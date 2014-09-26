@@ -20,6 +20,31 @@ class Movies
       db.close ->
         callback? files
 
+  dbExists: (callback) ->
+    console.log 'look for files that no longer exist...'
+    db = new sqlite3.Database('data.db')
+    db.all "SELECT rowid AS id, path, status FROM FILES", (err, rows) ->
+      i = 0
+      async.eachSeries rows, (file, rowCallback) ->
+        console.log 'Check that file exists:', file.rowid, file.path, file.status
+        fs.exists file.path, (exists) ->
+          if exists is false
+            console.log 'Removing missing file from db:', file.path
+            stmt = db.prepare("DELETE FROM FILES WHERE path=?")
+            stmt.run file.path
+            stmt.finalize
+            console.log file.path, exists
+            rowCallback()
+          else
+            console.log 'Exists:', file.path
+            rowCallback()
+          i++
+          if i is rows.length
+            console.log 'dbExists lolwut...'
+            db.close ->
+              console.log 'db closed...'
+              callback()
+
   dbMetaUpdate: (callback) ->
     console.log 'updating metadata for video files in database...'
 

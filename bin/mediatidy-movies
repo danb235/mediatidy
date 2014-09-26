@@ -32,8 +32,11 @@ program.command('update')
         movie.dbMetaUpdate ->
           callback null, "three"
       (callback) ->
-        movie.dbRead (files) ->
+        movie.dbExists ->
           callback null, "four"
+      (callback) ->
+        movie.dbRead (files) ->
+          callback null, "five"
     # optional callback
     ], (err, results) ->
       console.log 'Results:', results
