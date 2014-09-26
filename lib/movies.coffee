@@ -12,20 +12,20 @@ class Movies
     console.log 'retrieving files from database...'
 
     # read all rows from the files table
-    files = []
     db = new sqlite3.Database('data.db')
     db.all "SELECT rowid AS id, filename, status FROM FILES", (err, rows) ->
       rows.forEach (row) ->
         console.log row.id, row.status, row.filename
       db.close ->
-        callback? files
+        console.log 'Total files: ' + rows.length + '...'
+        callback()
 
   dbExists: (callback) ->
     console.log 'look for files that no longer exist...'
     db = new sqlite3.Database('data.db')
     db.all "SELECT rowid AS id, path, status FROM FILES", (err, rows) ->
       i = 0
-      async.eachSeries rows, (file, rowCallback) ->
+      async.eachSeries rows, ((file, rowCallback) ->
         console.log 'Check that file exists:', file.rowid, file.path, file.status
         fs.exists file.path, (exists) ->
           if exists is false
@@ -38,20 +38,18 @@ class Movies
           else
             console.log 'Exists:', file.path
             rowCallback()
-          i++
-          if i is rows.length
-            console.log 'dbExists lolwut...'
-            db.close ->
-              console.log 'db closed...'
-              callback()
+      ), (err) ->
+        console.log 'exists lolwut...'
+        db.close ->
+          console.log 'db closed...'
+          callback()
 
   dbMetaUpdate: (callback) ->
     console.log 'updating metadata for video files in database...'
 
     db = new sqlite3.Database('data.db')
     db.all "SELECT rowid AS id, path, status FROM FILES", (err, rows) ->
-      i = 0
-      async.eachSeries rows, (file, rowCallback) ->
+      async.eachSeries rows, ((file, rowCallback) ->
         if file.status is 'no_meta'
           console.log('PROBING: '.red + file.path);
           probe file.path, (err, probeData) ->
@@ -78,12 +76,11 @@ class Movies
         else
           console.log 'File already probed or not video:', file.path
           rowCallback()
-        i++
-        if i is rows.length
-          console.log 'lolwut...'
-          db.close ->
-            console.log 'db closed...'
-            callback()
+      ), (err) ->
+        console.log 'lolwut...'
+        db.close ->
+          console.log 'db closed...'
+          callback()
 
   dbUpdate: (videoFiles, otherFiles, dirs, callback) ->
     console.log 'updating database with latest files and directories...'
