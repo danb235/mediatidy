@@ -29,10 +29,10 @@ program.command('update')
         movie.dbUpdate results.videoFiles, results.otherFiles, results.dirs, ->
           callback null, "two"
       (callback) ->
-        movie.dbMetaUpdate ->
+        movie.dbExists ->
           callback null, "three"
       (callback) ->
-        movie.dbExists ->
+        movie.dbMetaUpdate ->
           callback null, "four"
       (callback) ->
         movie.dbRead (files) ->
