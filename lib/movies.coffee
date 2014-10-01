@@ -10,53 +10,87 @@ class Movies
   constructor: (@path) ->
 
   dbRead: (callback) ->
-    console.log 'retrieving files from database...'
+    console.log '==> '.cyan.bold + 'read from database'
 
     # read all rows from the files table
     db = new sqlite3.Database('data.db')
-    db.all "SELECT rowid AS id, filename, status FROM FILES", (err, rows) ->
+    db.all "SELECT rowid AS id, width, height, path, status FROM FILES", (err, rows) ->
       rows.forEach (row) ->
-        console.log row.id, row.status, row.filename
+        # console.log row.id, row.status, row.width, row.height, row.filename
       db.close ->
         console.log 'Total files: ' + rows.length + '...'
         callback()
 
   dbExists: (callback) ->
-    console.log 'look for files that no longer exist...'
+    console.log '==> '.cyan.bold + 'removing files and directories from database that no longer exist'
+
     db = new sqlite3.Database('data.db')
-    db.all "SELECT rowid AS id, path, status FROM FILES", (err, rows) ->
-      i = 0
-      async.eachSeries rows, ((file, rowCallback) ->
-        console.log 'Check that file exists:', file.rowid, file.path, file.status
-        fs.exists file.path, (exists) ->
-          if exists is false
-            console.log 'Removing missing file from db:', file.path
-            stmt = db.prepare("DELETE FROM FILES WHERE path=?")
-            stmt.run file.path
-            stmt.finalize
-            console.log file.path, exists
-            rowCallback()
+    async.series [
+      (callback) ->
+        db.all "SELECT rowid AS id, path, status FROM FILES", (err, rows) ->
+          rowsLength = rows.length
+          removedFiles = 0
+          fileExist = (iteration) ->
+            fs.exists rows[iteration].path, (exists) ->
+              if exists is false
+                console.log 'MISSING FILE:'.yellow, rows[iteration].path
+                stmt = db.prepare("DELETE FROM FILES WHERE path=?")
+                stmt.run rows[iteration].path
+                stmt.finalize
+                console.log 'REMOVED FROM DB:'.yellow, rows[iteration].path
+                removedFiles++
+              if rowsLength is iteration + 1
+                console.log removedFiles + ' out of ' + rowsLength + ' files removed from database...'
+                callback()
+              else
+                fileExist(iteration + 1)
+          if rowsLength > 0
+            fileExist(0)
           else
-            console.log 'Exists:', file.path
-            rowCallback()
-      ), (err) ->
-        console.log 'exists lolwut...'
-        db.close ->
-          console.log 'db closed...'
-          callback()
+            console.log 'No files in database to check...'
+            callback()
+      (callback) ->
+        db.all "SELECT rowid AS id, path FROM DIRS", (err, rows) ->
+          rowsLength = rows.length
+          removedDirs = 0
+          dirExist = (iteration) ->
+            fs.exists rows[iteration].path, (exists) ->
+              if exists is false
+                console.log 'MISSING DIR:'.yellow, rows[iteration].path
+                stmt = db.prepare("DELETE FROM DIRS WHERE path=?")
+                stmt.run rows[iteration].path
+                stmt.finalize
+                console.log 'REMOVED FROM DB:'.yellow, rows[iteration].path
+                removedDirs++
+              if rowsLength is iteration + 1
+                console.log removedDirs + ' out of ' + rowsLength + ' directories removed from database...'
+                callback()
+              else
+                dirExist(iteration + 1)
+          if rowsLength > 0
+            dirExist(0)
+          else
+            console.log 'No directories in database to check...'
+            callback()
+    # optional callback
+    ], (err, results) ->
+      db.close ->
+        console.log 'finished removing missing files and directories from mediatidy database'
+        callback? true
+
 
   dbMetaUpdate: (callback) ->
-    console.log 'updating metadata for video files in database...'
+    console.log '==> '.cyan.bold + 'update database with probed video metadata'
 
     db = new sqlite3.Database('data.db')
     db.all "SELECT rowid AS id, path, status FROM FILES WHERE status=\'no_meta\'", (err, rows) ->
       rowsLength = rows.length
+      console.log 'Found: ' + rowsLength + ' video files that need metadata update'
+      corruptFiles = 0
       probeFiles = (iteration) ->
-        console.log rowsLength, iteration, 'PROBING:', '>' + rows[iteration].path + '<'
         probe rows[iteration].path, (err, probeData) ->
           # loop through streams to find video stream
           if typeof probeData is "undefined"
-            console.log 'Cannot extract metadata from ' + rows[iteration].path + '...'
             stmt = db.prepare("UPDATE FILES SET status=? WHERE path=?")
             stmt.run 'corrupt', rows[iteration].path
             stmt.finalize
@@ -67,72 +101,33 @@ class Movies
               # find video stream and make sure it has relevant data
               if stream.codec_type is "video"
                 if typeof stream.width is "number" and stream.width > 0
-                  console.log 'Updating:', rows[iteration].path
                   stmt = db.prepare("UPDATE FILES SET status=?, filename=?,
-                    resolution=?, size=?, duration=? WHERE path=?")
-                  stmt.run 'healthy', probeData.filename, stream.width * stream.height,
+                    width=?, height=?, size=?, duration=? WHERE path=?")
+                  stmt.run 'healthy', probeData.filename, stream.width, stream.height,
                     probeData["format"].size, probeData["format"].duration, rows[iteration].path
                   stmt.finalize
               streamCallback()
             ), (err) ->
               if rowsLength is iteration + 1
+                process.stdout.write(".done\n")
                 db.close ->
                   callback()
               else
+                process.stdout.write('.')
                 probeFiles(iteration + 1)
       if rows.length > 0
         probeFiles(0)
       else
         callback()
 
-
-      # i = 0
-      # async.each rows, ((file, rowCallback) ->
-      #   # console.log i, file.id, file.path
-      #   # i++
-      #   # rowCallback()
-      #   if file.status is 'no_meta'
-      #     console.log i, 'PROBING: '.red + file.path
-      #     i++
-      #     probe file.path, (err, probeData) ->
-      #       # loop through streams to find video stream
-      #       if typeof probeData is "undefined"
-      #         console.log 'Cannot extract metadata from ' + file.path + '...'
-      #         stmt = db.prepare("UPDATE FILES SET status=? WHERE path=?")
-      #         stmt.run 'corrupt', file.path
-      #         stmt.finalize
-      #       else if probeData["streams"].length > 0
-      #         async.eachSeries probeData["streams"], (stream, streamCallback) ->
-
-      #           # find video stream and make sure it has relevant data
-      #           if stream.codec_type is "video"
-      #             if typeof stream.width is "number" and stream.width > 0
-      #               console.log 'Updating:', file.path
-      #               stmt = db.prepare("UPDATE FILES SET status=?, filename=?,
-      #                 resolution=?, size=?, duration=? WHERE path=?")
-      #               stmt.run 'healthy', probeData.filename, stream.width * stream.height,
-      #                 probeData["format"].size, probeData["format"].duration, file.path
-      #               stmt.finalize
-      #           streamCallback()
-      #     rowCallback()
-      #   else
-      #     console.log i, 'File already probed or not video:', file.path
-      #     i++
-      #     rowCallback()
-      # ), (err) ->
-        # console.log 'lolwut...'
-        # db.close ->
-        #   console.log 'db closed...'
-        #   callback()
-
   dbUpdate: (videoFiles, otherFiles, dirs, callback) ->
-    console.log 'updating database with latest files and directories...'
+    console.log '==> '.cyan.bold + 'updating mediatidy database with current files and directories'
 
     # make sure db and tables exist
     db = new sqlite3.Database('data.db')
     createTable = (callback) ->
       db.run "CREATE TABLE IF NOT EXISTS DIRS (path TEXT UNIQUE)", ->
-        db.run "CREATE TABLE IF NOT EXISTS FILES (path TEXT UNIQUE, status TEXT, filename TEXT, resolution INT, size INT, duration INT)", ->
+        db.run "CREATE TABLE IF NOT EXISTS FILES (path TEXT UNIQUE, status TEXT, filename TEXT, width INT, height INT, size INT, duration INT)", ->
           callback()
 
     addDirs = (callback) ->
@@ -177,20 +172,32 @@ class Movies
       stmt.finalize
       callback()
 
-    # create db and tables; add any files not already in db
-    createTable ->
-      addDirs ->
-        console.log 'dirs added to database...'
+    async.series [
+      (callback) ->
+        createTable ->
+          callback()
+      (callback) ->
+        console.log 'updating directories...'
+        addDirs ->
+          callback()
+      (callback) ->
+        console.log 'updating video files...'
+        addVideoFiles ->
+          callback()
+      (callback) ->
+        console.log 'updating other files...'
         addOtherFiles ->
-          console.log 'other files added to database...'
-          addVideoFiles ->
-            console.log 'video files added to database...'
-            db.close ->
-              console.log 'database update complete...'
-              callback? true
+          callback()
+      (callback) ->
+        db.close ->
+          callback()
+    # optional callback
+    ], (err, results) ->
+      console.log 'database updated'
+      callback? true
 
   update: (callback) ->
-    console.log 'looking for files and directories at', @path, '...'
+    console.log '==> '.cyan.bold + 'search for current files and directories'
 
     # filter files array with the following subtitle file regex matches
     subtitles = [
@@ -226,7 +233,7 @@ class Movies
         videoTypes.some (videoType) ->
           videoType.test file
       )
-      console.log paths.videoFiles.length + " video files found..."
+      console.log 'Found: ' + paths.videoFiles.length + ' video files'
 
       # if not a video file push to other file array
       paths.otherFiles = paths.files.filter((file) ->
@@ -234,9 +241,9 @@ class Movies
           videoType.test file
         )
       )
-      console.log paths.otherFiles.length + " other files found..."
+      console.log 'Found: ' + paths.otherFiles.length + " other files"
 
-      console.log  paths.dirs.length + ' directories found...'
+      console.log  'Found: ' + paths.dirs.length + ' directories'
       callback? paths.videoFiles, paths.otherFiles, paths.dirs
 
 module.exports = Movies

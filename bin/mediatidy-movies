@@ -14,7 +14,6 @@ program.option('-a, --apiurl <apiurl>', 'API base URL')
 program.command('update')
   .description('look for for files and directories and add to mediatidy database')
   .action () ->
-    console.log '==> '.cyan.bold + 'updating database with current files and directories'
     movie = new Movies Config.get('path')
 
     results = {}
@@ -24,22 +23,22 @@ program.command('update')
           results.videoFiles = videoFiles
           results.otherFiles = otherFiles
           results.dirs = dirs
-          callback null, "one"
+          callback()
       (callback) ->
         movie.dbUpdate results.videoFiles, results.otherFiles, results.dirs, ->
-          callback null, "two"
+          callback()
       (callback) ->
         movie.dbExists ->
-          callback null, "three"
+          callback()
       (callback) ->
         movie.dbMetaUpdate ->
-          callback null, "four"
+          callback()
       (callback) ->
         movie.dbRead (files) ->
-          callback null, "five"
+          callback()
     # optional callback
     ], (err, results) ->
-      console.log 'Results:', results
+      # console.log 'Results:', results
 
 program.parse process.argv
 
