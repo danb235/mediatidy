@@ -14,9 +14,9 @@ class Movies
 
     # read all rows from the files table
     db = new sqlite3.Database('data.db')
-    db.all "SELECT rowid AS id, width, height, path, status FROM FILES", (err, rows) ->
+    db.all "SELECT rowid AS id, filtered_filename, width, height, path, status FROM FILES", (err, rows) ->
       rows.forEach (row) ->
-        # console.log row.id, row.status, row.width, row.height, row.filename
+        console.log row.id, row.status, row.filtered_filename, row.width, row.height, row.path
       db.close ->
         console.log 'Total files: ' + rows.length + '...'
         callback()
@@ -90,25 +90,25 @@ class Movies
       probeFiles = (iteration) ->
         probe rows[iteration].path, (err, probeData) ->
 
-          if probeData.filename.match(/sample/i)
-            stmt = db.prepare("UPDATE FILES SET status=? WHERE path=?")
-            stmt.run 'sample', rows[iteration].path
-            stmt.finalize
-            probeFiles(iteration + 1)
-          else
-            # remove file extension; remove whitespace; remove special characters
-            filteredFileName = probeData.filename.replace(/\.\w*$/, "")
-            filteredFileName = filteredFileName.replace(/\s/g, "")
-            filteredFileName = filteredFileName.replace(/\W/g, "")
-            filteredFileName = filteredFileName.toUpperCase()
-
           # loop through streams to find video stream
           if typeof probeData is "undefined"
             stmt = db.prepare("UPDATE FILES SET status=? WHERE path=?")
             stmt.run 'corrupt', rows[iteration].path
             stmt.finalize
             probeFiles(iteration + 1)
+          else if probeData.filename.match(/sample/i)
+            stmt = db.prepare("UPDATE FILES SET status=? WHERE path=?")
+            stmt.run 'sample', rows[iteration].path
+            stmt.finalize
+            probeFiles(iteration + 1)
           else if probeData["streams"].length > 0
+
+            # creat filtered filename: remove file extension; remove whitespace; remove special characters; all uppercase
+            filteredFileName = probeData.filename.replace(/\.\w*$/, "")
+            filteredFileName = filteredFileName.replace(/\s/g, "")
+            filteredFileName = filteredFileName.replace(/\W/g, "")
+            filteredFileName = filteredFileName.toUpperCase()
+
             async.eachSeries probeData["streams"], ((stream, streamCallback) ->
 
               # find video stream and make sure it has relevant data
@@ -140,7 +140,8 @@ class Movies
     db = new sqlite3.Database('data.db')
     createTable = (callback) ->
       db.run "CREATE TABLE IF NOT EXISTS DIRS (path TEXT UNIQUE)", ->
-        db.run "CREATE TABLE IF NOT EXISTS FILES (path TEXT UNIQUE, status TEXT, filename TEXT, width INT, height INT, size INT, duration INT)", ->
+        db.run "CREATE TABLE IF NOT EXISTS FILES (path TEXT UNIQUE, status TEXT, filename TEXT,
+          filtered_filename TEXT, width INT, height INT, size INT, duration INT)", ->
           callback()
 
     addDirs = (callback) ->
