@@ -1,8 +1,6 @@
 movies = require "./lib/movies"
 config = require "./lib/config"
-data = require "./lib/data"
 
 module.exports =
-	Albums: albums
+	Movies: movies
 	Config: config
-	Data: data

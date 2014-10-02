@@ -89,6 +89,19 @@ class Movies
       corruptFiles = 0
       probeFiles = (iteration) ->
         probe rows[iteration].path, (err, probeData) ->
+
+          if probeData.filename.match(/sample/i)
+            stmt = db.prepare("UPDATE FILES SET status=? WHERE path=?")
+            stmt.run 'sample', rows[iteration].path
+            stmt.finalize
+            probeFiles(iteration + 1)
+          else
+            # remove file extension; remove whitespace; remove special characters
+            filteredFileName = probeData.filename.replace(/\.\w*$/, "")
+            filteredFileName = filteredFileName.replace(/\s/g, "")
+            filteredFileName = filteredFileName.replace(/\W/g, "")
+            filteredFileName = filteredFileName.toUpperCase()
+
           # loop through streams to find video stream
           if typeof probeData is "undefined"
             stmt = db.prepare("UPDATE FILES SET status=? WHERE path=?")
@@ -102,8 +115,8 @@ class Movies
               if stream.codec_type is "video"
                 if typeof stream.width is "number" and stream.width > 0
                   stmt = db.prepare("UPDATE FILES SET status=?, filename=?,
-                    width=?, height=?, size=?, duration=? WHERE path=?")
-                  stmt.run 'healthy', probeData.filename, stream.width, stream.height,
+                    filtered_filename=?, width=?, height=?, size=?, duration=? WHERE path=?")
+                  stmt.run 'healthy', probeData.filename, filteredFileName, stream.width, stream.height,
                     probeData["format"].size, probeData["format"].duration, rows[iteration].path
                   stmt.finalize
               streamCallback()
