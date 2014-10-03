@@ -31,7 +31,7 @@ program.command('update')
         movie.dbExists ->
           callback()
       (callback) ->
-        movie.dbMetaUpdate ->
+        movie.dbFileMetaUpdate ->
           callback()
       (callback) ->
         movie.dbRead (files) ->
