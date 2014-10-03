@@ -21,7 +21,6 @@
     "coffee-script": "^1.8.0",
     "colors": "^0.6.2",
     "commander": "~2.1.0",
-    "crypto": "0.0.3",
     "fs-extra": "^0.11.1",
     "lodash": "^2.4.1",
     "nconf": "^0.6.9",
@@ -30,6 +29,7 @@
     "node-sha1": "0.0.1",
     "path": "^0.4.9",
     "prompt": "^0.2.14",
+    "sha1": "^1.1.0",
     "sqlite3": "^2.2.7"
   },
   "coffeelintConfig": {
