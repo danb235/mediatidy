@@ -5,6 +5,7 @@ fs = require('fs-extra')
 probe = require('node-ffprobe')
 async = require('async')
 colors = require 'colors'
+hash_file = require("hash_file")
 
 class Movies
   constructor: (@path) ->
@@ -14,9 +15,9 @@ class Movies
 
     # read all rows from the files table
     db = new sqlite3.Database('data.db')
-    db.all "SELECT rowid AS id, filtered_filename, width, height, path, status FROM FILES", (err, rows) ->
+    db.all "SELECT rowid AS id, filtered_filename, signature, width, height, path, status FROM FILES", (err, rows) ->
       rows.forEach (row) ->
-        console.log row.id, row.status, row.filtered_filename, row.width, row.height, row.path
+        console.log row.id, row.status, row.filtered_filename, row.signature, row.width, row.height, row.path
       db.close ->
         console.log 'Total files: ' + rows.length + '...'
         callback()
@@ -78,8 +79,7 @@ class Movies
         console.log 'finished removing missing files and directories from mediatidy database'
         callback? true
 
-
-  dbMetaUpdate: (callback) ->
+  dbFileMetaUpdate: (callback) ->
     console.log '==> '.cyan.bold + 'update database with probed video metadata'
 
     db = new sqlite3.Database('data.db')
@@ -91,7 +91,7 @@ class Movies
         probe rows[iteration].path, (err, probeData) ->
 
           # loop through streams to find video stream
-          if typeof probeData is "undefined"
+          if typeof probeData is "undefined" or probeData["streams"].length is 0
             stmt = db.prepare("UPDATE FILES SET status=? WHERE path=?")
             stmt.run 'corrupt', rows[iteration].path
             stmt.finalize
@@ -103,31 +103,44 @@ class Movies
             probeFiles(iteration + 1)
           else if probeData["streams"].length > 0
 
-            # creat filtered filename: remove file extension; remove whitespace; remove special characters; all uppercase
+            # create filtered filename: remove file extension;
+            # remove whitespace; remove special characters;
+            # remove 'year' and all text after; all uppercase
             filteredFileName = probeData.filename.replace(/\.\w*$/, "")
             filteredFileName = filteredFileName.replace(/\s/g, "")
             filteredFileName = filteredFileName.replace(/\W/g, "")
+            filteredFileName = filteredFileName.replace(/\d{4}.*$/g, "")
             filteredFileName = filteredFileName.toUpperCase()
 
-            async.eachSeries probeData["streams"], ((stream, streamCallback) ->
+            # get file signature from first and last 256 bytes of data
+            fileSigGen = (filePath, callback) ->
+              beginning = fs.createReadStream(filePath, {start: 0, end: 255})
+              beginning.on "data", (beginningChunk) ->
+                fs.stat filePath, (err, stats) ->
+                  end = fs.createReadStream(filePath, {start: stats.size - 256, end: stats.size})
+                  end.on "data", (endChunk) ->
+                    callback? sha1(beginningChunk + endChunk)
+            fileSigGen rows[iteration].path, (fileSignature) ->
+                  async.eachSeries probeData["streams"], ((stream, streamCallback) ->
 
-              # find video stream and make sure it has relevant data
-              if stream.codec_type is "video"
-                if typeof stream.width is "number" and stream.width > 0
-                  stmt = db.prepare("UPDATE FILES SET status=?, filename=?,
-                    filtered_filename=?, width=?, height=?, size=?, duration=? WHERE path=?")
-                  stmt.run 'healthy', probeData.filename, filteredFileName, stream.width, stream.height,
-                    probeData["format"].size, probeData["format"].duration, rows[iteration].path
-                  stmt.finalize
-              streamCallback()
-            ), (err) ->
-              if rowsLength is iteration + 1
-                process.stdout.write(".done\n")
-                db.close ->
-                  callback()
-              else
-                process.stdout.write('.')
-                probeFiles(iteration + 1)
+                    # find video stream and make sure it has relevant data
+                    if stream.codec_type is "video"
+                      if typeof stream.width is "number" and stream.width > 0
+                        stmt = db.prepare("UPDATE FILES SET status=?, filename=?,
+                          filtered_filename=?, signature=?, width=?, height=?, size=?,
+                          duration=? WHERE path=?")
+                        stmt.run 'healthy', probeData.filename, filteredFileName, fileSignature, stream.width,
+                          stream.height, probeData["format"].size, probeData["format"].duration, rows[iteration].path
+                        stmt.finalize
+                    streamCallback()
+                  ), (err) ->
+                    if rowsLength is iteration + 1
+                      process.stdout.write(".done\n")
+                      db.close ->
+                        callback()
+                    else
+                      process.stdout.write('.')
+                      probeFiles(iteration + 1)
       if rows.length > 0
         probeFiles(0)
       else
@@ -139,9 +152,9 @@ class Movies
     # make sure db and tables exist
     db = new sqlite3.Database('data.db')
     createTable = (callback) ->
-      db.run "CREATE TABLE IF NOT EXISTS DIRS (path TEXT UNIQUE)", ->
+      db.run "CREATE TABLE IF NOT EXISTS DIRS (path TEXT UNIQUE, status TEXT)", ->
         db.run "CREATE TABLE IF NOT EXISTS FILES (path TEXT UNIQUE, status TEXT, filename TEXT,
-          filtered_filename TEXT, width INT, height INT, size INT, duration INT)", ->
+          filtered_filename TEXT, signature TEXT, width INT, height INT, size INT, duration INT)", ->
           callback()
 
     addDirs = (callback) ->
