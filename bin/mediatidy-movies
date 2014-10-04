@@ -34,6 +34,9 @@ program.command('update')
         movie.dbFileMetaUpdate ->
           callback()
       (callback) ->
+        movie.dbFileSignature ->
+          callback()
+      (callback) ->
         movie.dbRead (files) ->
           callback()
     # optional callback

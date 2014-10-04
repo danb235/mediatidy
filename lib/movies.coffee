@@ -1,6 +1,7 @@
 dir = require('node-dir')
 sqlite3 = require("sqlite3").verbose()
-sha1 = require("node-sha1")
+# sha1 = require("node-sha1")
+crypto = require('crypto')
 fs = require('fs-extra')
 probe = require('node-ffprobe')
 async = require('async')
@@ -17,7 +18,7 @@ class Movies
     db = new sqlite3.Database('data.db')
     db.all "SELECT rowid AS id, filtered_filename, signature, width, height, path, status FROM FILES", (err, rows) ->
       rows.forEach (row) ->
-        console.log row.id, row.status, row.filtered_filename, row.signature, row.width, row.height, row.path
+        # console.log row.id, row.status, row.filtered_filename, row.signature, row.width, row.height, row.path
       db.close ->
         console.log 'Total files: ' + rows.length + '...'
         callback()
@@ -89,7 +90,6 @@ class Movies
       corruptFiles = 0
       probeFiles = (iteration) ->
         probe rows[iteration].path, (err, probeData) ->
-
           # loop through streams to find video stream
           if typeof probeData is "undefined" or probeData["streams"].length is 0
             stmt = db.prepare("UPDATE FILES SET status=? WHERE path=?")
@@ -112,39 +112,94 @@ class Movies
             filteredFileName = filteredFileName.replace(/\d{4}.*$/g, "")
             filteredFileName = filteredFileName.toUpperCase()
 
-            # get file signature from first and last 256 bytes of data
-            fileSigGen = (filePath, callback) ->
-              beginning = fs.createReadStream(filePath, {start: 0, end: 255})
-              beginning.on "data", (beginningChunk) ->
-                fs.stat filePath, (err, stats) ->
-                  end = fs.createReadStream(filePath, {start: stats.size - 256, end: stats.size})
-                  end.on "data", (endChunk) ->
-                    callback? sha1(beginningChunk + endChunk)
-            fileSigGen rows[iteration].path, (fileSignature) ->
-                  async.eachSeries probeData["streams"], ((stream, streamCallback) ->
+            async.eachSeries probeData["streams"], ((stream, streamCallback) ->
 
-                    # find video stream and make sure it has relevant data
-                    if stream.codec_type is "video"
-                      if typeof stream.width is "number" and stream.width > 0
-                        stmt = db.prepare("UPDATE FILES SET status=?, filename=?,
-                          filtered_filename=?, signature=?, width=?, height=?, size=?,
-                          duration=? WHERE path=?")
-                        stmt.run 'healthy', probeData.filename, filteredFileName, fileSignature, stream.width,
-                          stream.height, probeData["format"].size, probeData["format"].duration, rows[iteration].path
-                        stmt.finalize
-                    streamCallback()
-                  ), (err) ->
-                    if rowsLength is iteration + 1
-                      process.stdout.write(".done\n")
-                      db.close ->
-                        callback()
-                    else
-                      process.stdout.write('.')
-                      probeFiles(iteration + 1)
+              # find video stream and make sure it has relevant data
+              if stream.codec_type is "video"
+                if typeof stream.width is "number" and stream.width > 0
+                  stmt = db.prepare("UPDATE FILES SET status=?, filename=?,
+                    filtered_filename=?, width=?, height=?, size=?,
+                    duration=? WHERE path=?")
+                  stmt.run 'healthy', probeData.filename, filteredFileName, stream.width,
+                    stream.height, probeData["format"].size, probeData["format"].duration, rows[iteration].path
+                  stmt.finalize
+              streamCallback()
+            ), (err) ->
+              if rowsLength is iteration + 1
+                process.stdout.write(".done\n")
+                db.close ->
+                  callback()
+              else
+                process.stdout.write('.')
+                probeFiles(iteration + 1)
       if rows.length > 0
         probeFiles(0)
       else
         callback()
+
+  dbFileSignature: (callback) ->
+    console.log '==> '.cyan.bold + 'update database with video file signatures'
+
+    db = new sqlite3.Database('data.db')
+    db.all "SELECT rowid AS id, path, status FROM FILES WHERE status=\'healthy\'", (err, rows) ->
+      rowsLength = rows.length
+      console.log rowsLength
+
+      checksum = (str, algorithm, encoding) ->
+        crypto.createHash(algorithm or "md5").update(str, "utf8").digest encoding or "hex"
+
+      sigGen = (iteration) ->
+        fs.stat rows[iteration].path, (err, stats) ->
+          console.log iteration, stats.size, rows[iteration].path
+          if stats.size < 256<<10
+            console.log 'Under... skipping'
+            sigGen(iteration + 1)
+          else
+            end = fs.createReadStream(rows[iteration].path, {start: stats.size - 1024, end: stats.size})
+            end.on "data", (endChunk) ->
+              console.log 'OVER:', checksum(endChunk, 'sha1')
+              sigGen(iteration + 1)
+      if rows.length > 0
+        sigGen(0)
+      else
+        callback()
+        # fileSize = undefined
+        # beginningChunk = undefined
+        # endChunk = undefined
+        # signature = undefined
+        # async.series [
+        #   (sigCallback) ->
+        #     fs.stat rows[iteration].path, (err, stats) ->
+        #       fileSize = stats.size
+        #       console.log 'size: ', fileSize
+        #       sigCallback()
+        #   (sigCallback) ->
+        #     beginning = fs.createReadStream(rows[iteration].path, {start: 0, end: 511})
+        #     beginning.on "data", (beginningChunk) ->
+        #       beginningChunk = beginningChunk
+        #       console.log sha1(beginningChunk)
+        #       sigCallback()
+        #   (sigCallback) ->
+        #     end = fs.createReadStream(rows[iteration].path, {start: fileSize - 512, end: fileSize})
+        #     end.on "data", (endChunk) ->
+        #       endChunk = endChunk
+        #       console.log sha1(endChunk)
+        #       console.log sha1(beginningChunk + endChunk)
+        #       signature = sha1(beginningChunk + endChunk)
+        #       sigCallback()
+        # # optional callback
+        # ], (err, results) ->
+        #   console.log rows[iteration].path
+        #   stmt = db.prepare("UPDATE FILES SET signature=? WHERE path=?")
+        #   stmt.run signature, rows[iteration].path
+        #   stmt.finalize
+        #   if rowsLength is iteration + 1
+        #     process.stdout.write(".done\n")
+        #     db.close ->
+        #       callback()
+        #   else
+        #     process.stdout.write('.')
+        #     sigGen(iteration + 1)
 
   dbUpdate: (videoFiles, otherFiles, dirs, callback) ->
     console.log '==> '.cyan.bold + 'updating mediatidy database with current files and directories'
