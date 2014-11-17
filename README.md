@@ -20,6 +20,7 @@ Clone the repo, cd into the dir, install npm modules.
 git clone git@github.com:tkdan235/mediatidy.git
 cd mediatidy
 npm install
+```
 
 ## Using mediatidy
 
