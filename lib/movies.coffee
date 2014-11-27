@@ -1,17 +1,21 @@
 dir = require('node-dir')
 sqlite3 = require("sqlite3").verbose()
-sha1 = require("node-sha1")
 fs = require('fs-extra')
 probe = require('node-ffprobe')
 async = require('async')
 colors = require 'colors'
-hash_file = require("hash_file")
+Database = require './db'
 
-class Movies
+class Movies extends Database
   constructor: (@path) ->
+
+  setup: (callback) ->
+    @dbSetup ->
+      callback()
 
   dbRead: (callback) ->
     console.log '==> '.cyan.bold + 'read from database'
+    console.log @foo
 
     # read all rows from the files table
     db = new sqlite3.Database('data.db')
@@ -233,8 +237,7 @@ class Movies
       /\.sub$/i
     ]
 
-    # filter files array with the following video file regex matches
-    videoTypes = [
+    movieFileExtensions = [
       /\.3gp$/i
       /\.asf$/i
       /\.avi$/i
@@ -252,25 +255,65 @@ class Movies
     ]
 
     path = @path
-    dir.paths path, (err, paths) ->
+    dir.paths path, (err, paths) =>
       throw err if err
 
-      # if video file regex push to video array
-      paths.videoFiles = paths.files.filter((file) ->
-        videoTypes.some (videoType) ->
-          videoType.test file
-      )
-      console.log 'Found: ' + paths.videoFiles.length + ' video files'
+      console.log paths.files.length
+      @filterFileTypes paths.files, movieFileExtensions, (movieFiles) =>
+        console.log movieFiles.length
 
-      # if not a video file push to other file array
-      paths.otherFiles = paths.files.filter((file) ->
-        not videoTypes.some((videoType) ->
-          videoType.test file
-        )
-      )
-      console.log 'Found: ' + paths.otherFiles.length + " other files"
+        # convert each result to object
+        @convertArray movieFiles, 'path', (fileObjects) =>
+          console.log fileObjects.length
 
-      console.log  'Found: ' + paths.dirs.length + ' directories'
-      callback? paths.videoFiles, paths.otherFiles, paths.dirs
+          @dbBulkFileUpdate fileObjects, (err, result) ->
+            console.log err, result
+
+
+      #
+      #   # if video file regex push to video array
+      #   @filterFileTypes fileObjects, movieFileExtensions, (movieFiles) ->
+      #     console.log movieFiles
+
+        # videoFiles = paths.files.filter((file) ->
+        #   videoTypes.some (videoType) ->
+        #     videoType.test file
+        # )
+      # console.log 'Found: ' + paths.videoFiles.length + ' video files'
+      # @dbBulkUpdate paths.videoFiles, ->
+      #   console.log 'donedone'
+      #   callback()
+
+      # # if not a video file push to other file array
+      # paths.otherFiles = paths.files.filter((file) ->
+      #   not videoTypes.some((videoType) ->
+      #     videoType.test file
+      #   )
+      # )
+      # console.log 'Found: ' + paths.otherFiles.length + " other files"
+      #
+      # console.log  'Found: ' + paths.dirs.length + ' directories'
+      # callback? paths.videoFiles, paths.otherFiles, paths.dirs
+
+  convertArray: (array, property, callback) ->
+    # convert each result to object
+    arrayObjects = []
+    arrayLength = array.length
+    i = 0
+    while i < arrayLength
+      arrayObjects.push
+        path: array[i]
+      i++
+      if i is arrayLength
+        console.log 'done'
+        callback arrayObjects
+
+  filterFileTypes: (filesArray, filterArray, callback) ->
+    # filter files array with the following video file regex matches
+    filteredFiles = filesArray.filter((file) ->
+      filterArray.some (videoType) ->
+        videoType.test file
+    )
+    callback filteredFiles
 
 module.exports = Movies

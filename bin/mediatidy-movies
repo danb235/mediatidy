@@ -19,23 +19,26 @@ program.command('update')
     results = {}
     async.series [
       (callback) ->
+        movie.setup ->
+          callback()
+      (callback) ->
         movie.update (videoFiles, otherFiles, dirs) ->
           results.videoFiles = videoFiles
           results.otherFiles = otherFiles
           results.dirs = dirs
           callback()
-      (callback) ->
-        movie.dbUpdate results.videoFiles, results.otherFiles, results.dirs, ->
-          callback()
-      (callback) ->
-        movie.dbExists ->
-          callback()
-      (callback) ->
-        movie.dbFileMetaUpdate ->
-          callback()
-      (callback) ->
-        movie.dbRead (files) ->
-          callback()
+      # (callback) ->
+      #   movie.dbUpdate results.videoFiles, results.otherFiles, results.dirs, ->
+      #     callback()
+      # (callback) ->
+      #   movie.dbExists ->
+      #     callback()
+      # (callback) ->
+      #   movie.dbFileMetaUpdate ->
+      #     callback()
+      # (callback) ->
+      #   movie.dbRead (files) ->
+      #     callback()
     # optional callback
     ], (err, results) ->
       # console.log 'Results:', results
