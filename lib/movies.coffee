@@ -150,92 +150,8 @@ class Movies extends Database
       else
         callback()
 
-  dbUpdate: (videoFiles, otherFiles, dirs, callback) ->
-    console.log '==> '.cyan.bold + 'updating mediatidy database with current files and directories'
-
-    # make sure db and tables exist
-    db = new sqlite3.Database('data.db')
-    createTable = (callback) ->
-      db.run "CREATE TABLE IF NOT EXISTS DIRS (path TEXT UNIQUE, status TEXT)", ->
-        db.run "CREATE TABLE IF NOT EXISTS FILES (path TEXT UNIQUE, status TEXT, filename TEXT,
-          filtered_filename TEXT, signature TEXT, width INT, height INT, size INT, duration INT)", ->
-          callback()
-
-    addDirs = (callback) ->
-      # prepare sql statement
-      stmt = db.prepare("INSERT OR IGNORE INTO DIRS (path) VALUES (?)")
-
-      # iterate through array of files to construct sql statement
-      arrayLength = dirs.length
-      i = 0
-      while i < arrayLength
-
-        stmt.run dirs[i]
-        i++
-
-      # insert data into db
-      stmt.finalize
-      callback()
-
-    addVideoFiles = (callback) ->
-      # prepare sql statement
-      stmt = db.prepare("INSERT OR IGNORE INTO FILES (path, status) VALUES (?,?)")
-      arrayLength = videoFiles.length
-      i = 0
-      while i < arrayLength
-        stmt.run videoFiles[i], 'no_meta'
-        i++
-
-      # insert data into db
-      stmt.finalize
-      callback()
-
-    addOtherFiles = (callback) ->
-      # prepare sql statement
-      stmt = db.prepare("INSERT OR IGNORE INTO FILES (path, status) VALUES (?,?)")
-      arrayLength = otherFiles.length
-      i = 0
-      while i < arrayLength
-        stmt.run otherFiles[i], 'other_file'
-        i++
-
-      # insert data into db
-      stmt.finalize
-      callback()
-
-    async.series [
-      (callback) ->
-        createTable ->
-          callback()
-      (callback) ->
-        console.log 'updating directories...'
-        addDirs ->
-          callback()
-      (callback) ->
-        console.log 'updating video files...'
-        addVideoFiles ->
-          callback()
-      (callback) ->
-        console.log 'updating other files...'
-        addOtherFiles ->
-          callback()
-      (callback) ->
-        db.close ->
-          callback()
-    # optional callback
-    ], (err, results) ->
-      console.log 'database updated'
-      callback? true
-
-  update: (callback) ->
-    console.log '==> '.cyan.bold + 'search for current files and directories'
-
-    # filter files array with the following subtitle file regex matches
-    subtitles = [
-      /\.idx$/i
-      /\.srr$/i
-      /\.sub$/i
-    ]
+  addFiles: (callback) ->
+    console.log '==> '.cyan.bold + 'search for and add files to database...'
 
     movieFileExtensions = [
       /\.3gp$/i
@@ -258,44 +174,44 @@ class Movies extends Database
     dir.paths path, (err, paths) =>
       throw err if err
 
-      console.log paths.files.length
-      @filterFileTypes paths.files, movieFileExtensions, (movieFiles) =>
-        console.log movieFiles.length
+      # add files to db asynchronously
+      async.waterfall [
+        # add video files to db
+        (callback) =>
+          # filter files with video file extension
+          @filterFileTypes paths.files, movieFileExtensions, (movieFiles) ->
+            callback null, movieFiles
+        (movieFiles, callback) =>
+          # convert array of files to array of objects
+          @convertArray movieFiles, 'VIDEO', (fileObjects) ->
+            callback null, fileObjects
+        (fileObjects, callback) =>
+          # add files to database
+          @dbBulkFileAdd fileObjects, (err, result) ->
+            throw err if err
+            console.log 'video file types found and added to db:', result.length
+            callback()
 
-        # convert each result to object
-        @convertArray movieFiles, 'path', (fileObjects) =>
-          console.log fileObjects.length
+        # add all other files to db
+        (callback) =>
+          # filter files without video extensions
+          @filterFileTypesOpposite paths.files, movieFileExtensions, (otherFiles) ->
+            callback null, otherFiles
+        (otherFiles, callback) =>
+          # convert array of files to array of objects
+          @convertArray otherFiles, 'OTHER', (fileObjects) ->
+            callback null, fileObjects
+        (fileObjects, callback) =>
+          # add files to database
+          @dbBulkFileAdd fileObjects, (err, result) ->
+            throw err if err
+            console.log 'other file types found and added to db:', result.length
+            callback()
+      ], (err, result) ->
+        throw err if err
+        callback()
 
-          @dbBulkFileUpdate fileObjects, (err, result) ->
-            console.log err, result
-
-
-      #
-      #   # if video file regex push to video array
-      #   @filterFileTypes fileObjects, movieFileExtensions, (movieFiles) ->
-      #     console.log movieFiles
-
-        # videoFiles = paths.files.filter((file) ->
-        #   videoTypes.some (videoType) ->
-        #     videoType.test file
-        # )
-      # console.log 'Found: ' + paths.videoFiles.length + ' video files'
-      # @dbBulkUpdate paths.videoFiles, ->
-      #   console.log 'donedone'
-      #   callback()
-
-      # # if not a video file push to other file array
-      # paths.otherFiles = paths.files.filter((file) ->
-      #   not videoTypes.some((videoType) ->
-      #     videoType.test file
-      #   )
-      # )
-      # console.log 'Found: ' + paths.otherFiles.length + " other files"
-      #
-      # console.log  'Found: ' + paths.dirs.length + ' directories'
-      # callback? paths.videoFiles, paths.otherFiles, paths.dirs
-
-  convertArray: (array, property, callback) ->
+  convertArray: (array, tag, callback) ->
     # convert each result to object
     arrayObjects = []
     arrayLength = array.length
@@ -303,15 +219,23 @@ class Movies extends Database
     while i < arrayLength
       arrayObjects.push
         path: array[i]
+        tag: tag
       i++
       if i is arrayLength
-        console.log 'done'
         callback arrayObjects
 
   filterFileTypes: (filesArray, filterArray, callback) ->
     # filter files array with the following video file regex matches
     filteredFiles = filesArray.filter((file) ->
       filterArray.some (videoType) ->
+        videoType.test file
+    )
+    callback filteredFiles
+
+  filterFileTypesOpposite: (filesArray, filterArray, callback) ->
+    # filter files array with the opposite file regex matches
+    filteredFiles = filesArray.filter((file) ->
+      not filterArray.some (videoType) ->
         videoType.test file
     )
     callback filteredFiles

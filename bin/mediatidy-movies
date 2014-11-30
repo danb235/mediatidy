@@ -22,14 +22,8 @@ program.command('update')
         movie.setup ->
           callback()
       (callback) ->
-        movie.update (videoFiles, otherFiles, dirs) ->
-          results.videoFiles = videoFiles
-          results.otherFiles = otherFiles
-          results.dirs = dirs
+        movie.addFiles ->
           callback()
-      # (callback) ->
-      #   movie.dbUpdate results.videoFiles, results.otherFiles, results.dirs, ->
-      #     callback()
       # (callback) ->
       #   movie.dbExists ->
       #     callback()
