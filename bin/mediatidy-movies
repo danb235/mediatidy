@@ -24,12 +24,12 @@ program.command('update')
       (callback) ->
         movie.addFiles ->
           callback()
-      # (callback) ->
-      #   movie.dbExists ->
-      #     callback()
-      # (callback) ->
-      #   movie.dbFileMetaUpdate ->
-      #     callback()
+      (callback) ->
+        movie.dbExists ->
+          callback()
+      (callback) ->
+        movie.dbFileMetaUpdate ->
+          callback()
       # (callback) ->
       #   movie.dbRead (files) ->
       #     callback()
