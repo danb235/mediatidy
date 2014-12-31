@@ -32,7 +32,8 @@
     "prompt": "^0.2.14",
     "sequelize": "^2.0.0-rc2",
     "sha1": "^1.1.0",
-    "sqlite3": "^2.2.7"
+    "sqlite3": "^2.2.7",
+    "underscore": "^1.7.0"
   },
   "coffeelintConfig": {
     "max_line_length": {

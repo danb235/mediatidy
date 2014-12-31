@@ -10,7 +10,9 @@ class Movies extends Database
   constructor: (@path) ->
 
   setup: (callback) ->
+    console.log 'setting up the bomb'
     @dbSetup ->
+      'we have signal'
       callback()
 
   dbRead: (callback) ->
@@ -187,9 +189,9 @@ class Movies extends Database
             callback null, fileObjects
         (fileObjects, callback) =>
           # add files to database
-          @dbBulkFileAdd fileObjects, (err, result) ->
-            throw err if err
-            console.log 'video file types found and added to db:', result.length
+          @dbBulkFileAdd fileObjects, (result) ->
+            # throw err if err
+            console.log 'video file types found and added to db:', result
             callback()
 
         # add all other files to db
@@ -203,9 +205,9 @@ class Movies extends Database
             callback null, fileObjects
         (fileObjects, callback) =>
           # add files to database
-          @dbBulkFileAdd fileObjects, (err, result) ->
-            throw err if err
-            console.log 'other file types found and added to db:', result.length
+          @dbBulkFileAdd fileObjects, (result) ->
+            # throw err if err
+            console.log 'other file types found and added to db:', result
             callback()
       ], (err, result) ->
         throw err if err
