@@ -72,6 +72,7 @@ class Movies extends Database
           console.log "No files deleted..."
           callback()
     else
+      console.log "No files needed to be deleted!"
       callback()
 
   deleteCorrupt: (callback) ->
@@ -82,14 +83,39 @@ class Movies extends Database
       @promptUserBulkDelete files, promptMessage, ->
         callback()
 
+  deleteOthers: (callback) ->
+    console.log '==> '.cyan.bold + 'delete files which are not video types'
+    # get all files with tag 'OTHER'
+    @dbBulkFileGetTag '\'OTHER\'', (files) =>
+      promptMessage = "Delete all files that are not video types?"
+      @promptUserBulkDelete files, promptMessage, ->
+        callback()
+
+  deleteSamples: (callback) ->
+    console.log '==> '.cyan.bold + 'delete video files which appear to be sample files'
+    # get all files with tag 'SAMPLE'
+    @dbBulkFileGetTag '\'SAMPLE\'', (files) =>
+      promptMessage = "Delete all video files which are considered sample files?"
+      @promptUserBulkDelete files, promptMessage, ->
+        callback()
+
+  # deleteSmallFiles: (callback) ->
+  #   console.log '==> '.cyan.bold + 'delete video files less than 100MB\'s in size'
+  #   @dbBulkFileGetAll (files) =>
+  #     promptMessage = "Delete all video files which are considered sample files?"
+  #     @promptUserBulkDelete files, promptMessage, ->
+  #       callback()
 
   exists: (callback) ->
     console.log '==> '.cyan.bold + 'removing files and directories from database that no longer exist'
 
     @dbBulkFileGetAll (files) =>
       @checkExists files, (missingFiles) =>
-        @dbBulkFileDelete missingFiles, ->
-          console.log 'finished removing missing files from mediatidy database'
+        if missingFiles > 0
+          @dbBulkFileDelete missingFiles, ->
+            console.log 'finished removing missing files from mediatidy database'
+            callback()
+        else
           callback()
 
   filesProbe: (array, callback) ->
@@ -226,15 +252,18 @@ class Movies extends Database
   convertArray: (array, tag, callback) ->
     # convert each result to object
     arrayObjects = []
-    arrayLength = array.length
-    i = 0
-    while i < arrayLength
-      arrayObjects.push
-        path: array[i]
-        tag: tag
-      i++
-      if i is arrayLength
-        callback arrayObjects
+    if array.length > 0
+      arrayLength = array.length
+      i = 0
+      while i < arrayLength
+        arrayObjects.push
+          path: array[i]
+          tag: tag
+        i++
+        if i is arrayLength
+          callback arrayObjects
+    else
+      callback arrayObjects
 
   filterFileTypes: (filesArray, filterArray, callback) ->
     # filter files array with the following video file regex matches

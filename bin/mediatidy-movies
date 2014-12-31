@@ -33,6 +33,12 @@ program.command('update')
       (callback) ->
         movie.deleteCorrupt ->
           callback()
+      (callback) ->
+        movie.deleteSamples ->
+          callback()
+      (callback) ->
+        movie.deleteOthers ->
+          callback()
     # optional callback
     ], (err, results) ->
       # console.log 'Results:', results
