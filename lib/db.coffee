@@ -41,17 +41,17 @@ class Database
     db.close ->
       callback arrayLength
 
-  dbBulkFileGet: (callback) ->
+  dbBulkFileGetAll: (callback) ->
     db = new sqlite3.Database('data.db')
     db.all "SELECT rowid AS id, path, tag, filename, filtered_filename, width,
       height, size, duration FROM FILES", (err, rows) ->
       db.close ->
         callback rows
 
-  dbBulkNewFileGet: (callback) ->
+  dbBulkFileGetTag: (tag, callback) ->
     db = new sqlite3.Database('data.db')
     db.all "SELECT rowid AS id, path, tag, filename, filtered_filename, width,
-      height, size, duration FROM FILES WHERE tag=\'VIDEO\'", (err, rows) ->
+      height, size, duration FROM FILES WHERE tag=#{tag}", (err, rows) ->
       db.close ->
         callback rows
 
@@ -67,7 +67,7 @@ class Database
     while i < arrayLength
       stmt.run array[i].tag, array[i].filename, array[i].filtered_filename,
         array[i].width, array[i].height, array[i].size, array[i].duration,
-        array[i].path 
+        array[i].path
       i++
 
     # insert data into db

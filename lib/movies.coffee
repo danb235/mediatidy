@@ -1,9 +1,9 @@
 dir = require('node-dir')
-sqlite3 = require("sqlite3").verbose()
 fs = require('fs-extra')
 probe = require('node-ffprobe')
 async = require('async')
 colors = require 'colors'
+prompt = require 'prompt'
 Database = require './db'
 
 class Movies extends Database
@@ -12,19 +12,6 @@ class Movies extends Database
   setup: (callback) ->
     @dbSetup ->
       callback()
-
-  dbRead: (callback) ->
-    console.log '==> '.cyan.bold + 'read from database'
-    console.log @foo
-
-    # read all rows from the files table
-    db = new sqlite3.Database('data.db')
-    db.all "SELECT rowid AS id, filtered_filename, signature, width, height, path, status FROM FILES", (err, rows) ->
-      rows.forEach (row) ->
-        console.log row.id, row.status, row.filtered_filename, row.signature, row.width, row.height, row.path
-      db.close ->
-        console.log 'Total files: ' + rows.length + '...'
-        callback()
 
   checkExists: (array, callback) ->
     missingFiles = []
@@ -46,10 +33,60 @@ class Movies extends Database
       console.log 'No files in database to check...'
       callback()
 
-  dbExists: (callback) ->
+  promptUserBulkDelete: (array, message, callback) ->
+    if array.length > 0
+      arrayLength = array.length
+      i = 0
+      while i < arrayLength
+        console.log "DELETE(?):".yellow, array[i].path
+        i++
+
+      # Start the prompt
+      prompt.start()
+      property =
+        name: "yesno"
+        message: message
+        validator: /y[es]*|n[o]?/
+        warning: "Must respond yes or no"
+        # default: (if @program.yes is true then "yes" else "no")
+
+
+      # get the simple yes or no property
+      prompt.get property, (err, result) =>
+        if result.yesno.match(/yes/i)
+
+          fileDelete = (iteration) =>
+            fs.unlink array[iteration].path, (err) =>
+              throw err if err
+              console.log "DELETED:".red, array[iteration].path
+
+              if arrayLength is iteration + 1
+                @dbBulkFileDelete array, ->
+                  console.log 'files deleted and removed from database...'
+                  callback()
+              else
+                fileDelete(iteration + 1)
+          fileDelete(0)
+
+        else
+          console.log "No files deleted..."
+          callback()
+    else
+      callback()
+
+  deleteCorrupt: (callback) ->
+    console.log '==> '.cyan.bold + 'delete video files which appear to be corrupt'
+    # get all files with tag 'CORRUPT'
+    @dbBulkFileGetTag '\'CORRUPT\'', (files) =>
+      promptMessage = "Delete all video files which are considered corrupt files?"
+      @promptUserBulkDelete files, promptMessage, ->
+        callback()
+
+
+  exists: (callback) ->
     console.log '==> '.cyan.bold + 'removing files and directories from database that no longer exist'
 
-    @dbBulkFileGet (files) =>
+    @dbBulkFileGetAll (files) =>
       @checkExists files, (missingFiles) =>
         @dbBulkFileDelete missingFiles, ->
           console.log 'finished removing missing files from mediatidy database'
@@ -111,14 +148,18 @@ class Movies extends Database
       console.log 'No files in database to probe...'
       callback()
 
-  dbFileMetaUpdate: (callback) ->
+  fileMetaUpdate: (callback) ->
     console.log '==> '.cyan.bold + 'update database with probed video metadata'
 
-    @dbBulkNewFileGet (files) =>
+    # get all files with tag 'VIDEO'
+    @dbBulkFileGetTag '\'VIDEO\'', (files) =>
       console.log 'Found: ' + files.length + ' video files that need metadata update'
       @filesProbe files, (probedFiles) =>
-        @dbBulkFileUpdate probedFiles, ->
-          console.log 'finished adding probe data to mediatidy database'
+        if probedFiles
+          @dbBulkFileUpdate probedFiles, ->
+            console.log 'finished adding probe data to mediatidy database'
+            callback()
+        else
           callback()
 
   addFiles: (callback) ->

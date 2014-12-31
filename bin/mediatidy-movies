@@ -7,7 +7,7 @@ colors = require 'colors'
 async = require 'async'
 
 program.option('-a, --apiurl <apiurl>', 'API base URL')
-  .option('-c, --clientid <clientid>', 'OAuth2 Client ID')
+  .option('-y, --yes', 'Make \'yes\' the default delete response (dangerous!)')
   .option('-s, --clientsecret <clientsecret>', 'OAuth2 Client secret')
   .option('-j, --json', 'display results in JSON')
 
@@ -25,14 +25,14 @@ program.command('update')
         movie.addFiles ->
           callback()
       (callback) ->
-        movie.dbExists ->
+        movie.exists ->
           callback()
       (callback) ->
-        movie.dbFileMetaUpdate ->
+        movie.fileMetaUpdate ->
           callback()
-      # (callback) ->
-      #   movie.dbRead (files) ->
-      #     callback()
+      (callback) ->
+        movie.deleteCorrupt ->
+          callback()
     # optional callback
     ], (err, results) ->
       # console.log 'Results:', results
