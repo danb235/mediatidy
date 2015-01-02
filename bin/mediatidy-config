@@ -2,6 +2,7 @@
 
 program = require 'commander'
 prompt = require 'prompt'
+async = require 'async'
 Config = require '../lib/config'
 
 program
@@ -10,31 +11,19 @@ program
 
 program
   .command('update')
-  .description("update configuration file at #{Config.file}")
-  .action ->
-    prompt.override = program.args[0]
-    prompt.message = "mediatidy".yellow
-    prompt.delimiter = ": ".green
-    prompt.properties =
-      path:
-        description: 'movie path'
-        message: 'enter path to movie files'
-        default: program.path
-        required: true
-
-    saveConfig = (result) ->
-      Config.set 'path', result?.path or program.path
-
-      Config.save (error) ->
-        console.log error.message if error?
-        console.log "saved mediatidy configuration to #{Config.file}"
-
-    unless program.yes?
-      prompt.start()
-      prompt.get ['path'], (error, result) ->
-        saveConfig result unless error?
-    else
-      saveConfig()
+  .description("update configuration")
+  .action () ->
+    config = new Config
+    async.series [
+      (seriesCallback) ->
+        config.setup ->
+          seriesCallback()
+      (seriesCallback) ->
+        config.pathPrompt ->
+          seriesCallback()
+    # optional callback
+    ], (err, results) ->
+      # console.log 'Results:', results
 
 program.parse process.argv
 

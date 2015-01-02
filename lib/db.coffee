@@ -84,4 +84,22 @@ class Database
     db.close ->
       callback arrayLength
 
+  dbBulkPathGetAll: (callback) ->
+    db = new sqlite3.Database('data.db')
+    db.all "SELECT rowid AS id, path, tag FROM PATHS", (err, rows) ->
+      db.close ->
+        callback rows
+
+  dbPathAdd: (path, tag, callback) ->
+    db = new sqlite3.Database('data.db')
+
+    # prepare sql statement
+    stmt = db.prepare("INSERT OR IGNORE INTO PATHS (path, tag) VALUES (?,?)")
+    stmt.run path, tag
+
+    # insert data into db
+    stmt.finalize
+    db.close ->
+      callback()
+
 module.exports = Database

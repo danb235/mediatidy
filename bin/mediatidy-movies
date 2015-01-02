@@ -16,7 +16,6 @@ program.command('update')
   .action () ->
     movie = new Movies Config.get('path')
 
-    results = {}
     async.series [
       (callback) ->
         movie.setup ->
@@ -39,6 +38,22 @@ program.command('update')
       (callback) ->
         movie.deleteOthers ->
           callback()
+    # optional callback
+    ], (err, results) ->
+      # console.log 'Results:', results
+
+program.command('paths')
+  .description('update paths to media files for mediatidy to tidy up!')
+  .action () ->
+    movie = new Movies
+
+    async.series [
+      (seriesCallback) ->
+        movie.setup ->
+          seriesCallback()
+      (seriesCallback) ->
+        movie.pathPrompt ->
+          seriesCallback()
     # optional callback
     ], (err, results) ->
       # console.log 'Results:', results

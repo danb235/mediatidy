@@ -281,4 +281,51 @@ class Movies extends Database
     )
     callback filteredFiles
 
+  pathPromptYesNo: (callback) ->
+    @dbBulkPathGetAll (array) =>
+
+      arrayLength = array.length
+      i = 0
+      while i < arrayLength
+        console.log "CURRENT PATH:".yellow, array[i].path
+        i++
+
+      # Start the prompt
+      prompt.start()
+
+      property =
+        name: "yesno"
+        message: 'Add a media path to mediatidy?'
+        validator: /y[es]*|n[o]?/
+        warning: "Must respond yes or no"
+
+      # get the simple yes or no property
+      prompt.get property, (err, result) =>
+        if result.yesno.match(/yes/i)
+          @pathPromptAdd =>
+            @pathPromptYesNo ->
+              callback()
+        else
+          console.log "Finished adding paths..."
+          callback()
+
+  pathPromptAdd: (callback) ->
+    prompt.message = "mediatidy".yellow
+    prompt.delimiter = ": ".green
+    prompt.properties =
+      path:
+        description: 'enter full path to media files (movies or tv shows)'
+        message: 'enter path to media files'
+        required: true
+
+    prompt.start()
+    prompt.get ['path'], (error, result) =>
+      @dbPathAdd result.path, 'MEDIA', ->
+        callback()
+
+  pathPrompt: (callback) ->
+    console.log '==> '.cyan.bold + 'update paths to media files for mediatidy to tidy up!'
+    @pathPromptYesNo =>
+      callback()
+
 module.exports = Movies

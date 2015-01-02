@@ -1,48 +1,72 @@
-nconf = require 'nconf'
-fs = require 'fs-extra'
-path = require 'path'
-_ = require 'lodash'
+prompt = require 'prompt'
+Database = require './db'
 
-class Config
-  @file: """
-  #{process.env.HOME or process.env.HOMEPATH or process.env.USERPROFILE}/.mediatidy/config.json
-  """
+class Config extends Database
 
-  @fileDefault: "../config.json"
+  pathPrompt: (callback) ->
+    console.log '==> '.cyan.bold + 'delete video files which appear to be corrupt'
 
-  try
-    stats = fs.statSync @file
+    currentPaths = []
+    newPaths = []
 
-    if stats.isFile()
-      nconf.file @file
+    # prompt.override = program.args[0]
+    prompt.message = "mediatidy".yellow
+    prompt.delimiter = ": ".green
+    prompt.properties =
+      path:
+        description: 'media path'
+        message: 'enter path to media files'
+        # default: program.path
+        required: true
 
-  catch error
-    try
-      fs.copySync((path.resolve __dirname, @fileDefault), @file);
-      stats = fs.statSync @file
+    # saveConfig = (result) ->
+    #   Config.set 'path', result?.path or program.path
+    #
+    #   Config.save (error) ->
+    #     console.log error.message if error?
+    #     console.log "saved mediatidy configuration to db"
 
-      if stats.isFile()
-        nconf.file @file
+    # unless program.yes?
+    prompt.start()
+    prompt.get ['path'], (error, result) ->
+      console.log 'yes', result
+      # saveConfig result unless error?
 
-    catch error
-      nconf.file path.resolve __dirname, @fileDefault
-      console.log "using default config file, run mediatidy config update to create one"
 
-  @required: ['clientid', 'clientsecret', 'apiurl']
+  promptUserPathAdd: (callback) ->
+    # Start the prompt
+    prompt.start()
+    property =
+      name: "yesno"
+      message: message
+      validator: /y[es]*|n[o]?/
+      warning: "Must respond yes or no"
+      # default: (if @program.yes is true then "yes" else "no")
 
-  @check: ->
-    true if nconf.get 'clientid'
 
-  @get: (name) ->
-    nconf.get name
+    # get the simple yes or no property
+    prompt.get property, (err, result) =>
+      if result.yesno.match(/yes/i)
 
-  @set: (name, value) ->
-    nconf.set name, value
+        fileDelete = (iteration) =>
+          fs.unlink array[iteration].path, (err) =>
+            throw err if err
+            console.log "DELETED:".red, array[iteration].path
 
-  @save: (callback) ->
-    nconf.save (error) ->
-      callback? error
+            if arrayLength is iteration + 1
+              @dbBulkFileDelete array, ->
+                console.log 'files deleted and removed from database...'
+                callback()
+            else
+              fileDelete(iteration + 1)
+        fileDelete(0)
 
-  constructor: ->
+      else
+        console.log "No files deleted..."
+        callback()
+
+  setup: (callback) ->
+    @dbSetup ->
+      callback()
 
 module.exports = Config
