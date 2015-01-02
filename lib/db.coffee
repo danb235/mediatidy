@@ -1,7 +1,7 @@
 sqlite3 = require("sqlite3").verbose()
-async = require 'async'
 
 class Database
+
   dbSetup: (callback) ->
     db = new sqlite3.Database('data.db')
     db.run "CREATE TABLE IF NOT EXISTS FILES (path TEXT UNIQUE, tag TEXT, filename TEXT,

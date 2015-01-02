@@ -3,11 +3,11 @@
   "preferGlobal": true,
   "main": "index",
   "name": "mediatidy",
-  "description": "Keep your media nice and Tidy!",
+  "description": "Keep your media nice and tidy!",
   "version": "0.0.1",
   "repository": {
     "type": "git",
-    "url": "git@github.com:tkdan235/mediatidy-cli.git"
+    "url": "git@github.com:tkdan235/mediatidy.git"
   },
   "engines": {
     "node": ">=0.10.0"
@@ -22,18 +22,10 @@
     "colors": "^0.6.2",
     "commander": "~2.1.0",
     "fs-extra": "^0.11.1",
-    "hash_file": "^0.1.1",
-    "lodash": "^2.4.1",
-    "nconf": "^0.6.9",
     "node-dir": "^0.1.6",
     "node-ffprobe": "^1.2.2",
-    "node-sha1": "0.0.1",
-    "path": "^0.4.9",
     "prompt": "^0.2.14",
-    "sequelize": "^2.0.0-rc2",
-    "sha1": "^1.1.0",
-    "sqlite3": "^2.2.7",
-    "underscore": "^1.7.0"
+    "sqlite3": "^2.2.7"
   },
   "coffeelintConfig": {
     "max_line_length": {
