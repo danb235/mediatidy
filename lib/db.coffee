@@ -1,11 +1,20 @@
 sqlite3 = require("sqlite3").verbose()
+async = require 'async'
 
 class Database
 
   dbSetup: (callback) ->
     db = new sqlite3.Database('data.db')
-    db.run "CREATE TABLE IF NOT EXISTS FILES (path TEXT UNIQUE, tag TEXT, filename TEXT,
-      filtered_filename TEXT, width INT, height INT, size INT, duration INT)", ->
+
+    async.series [
+      (seriesCallback) ->
+        db.run "CREATE TABLE IF NOT EXISTS MEDIAFILES (path TEXT UNIQUE, tag TEXT, filename TEXT,
+          filtered_filename TEXT, width INT, height INT, size INT, duration INT)", ->
+          seriesCallback()
+      (seriesCallback) ->
+        db.run "CREATE TABLE IF NOT EXISTS PATHS (path TEXT UNIQUE, tag TEXT)", ->
+          seriesCallback()
+    ], (err, results) ->
       db.close ->
         callback()
 
@@ -13,7 +22,7 @@ class Database
     db = new sqlite3.Database('data.db')
 
     # prepare sql statement
-    stmt = db.prepare("INSERT OR IGNORE INTO FILES (path, tag) VALUES (?,?)")
+    stmt = db.prepare("INSERT OR IGNORE INTO MEDIAFILES (path, tag) VALUES (?,?)")
     arrayLength = array.length
     i = 0
     while i < arrayLength
@@ -29,7 +38,7 @@ class Database
     db = new sqlite3.Database('data.db')
 
     # prepare sql  statement
-    stmt = db.prepare("DELETE FROM FILES WHERE path=?")
+    stmt = db.prepare("DELETE FROM MEDIAFILES WHERE path=?")
     arrayLength = array.length
     i = 0
     while i < arrayLength
@@ -44,14 +53,14 @@ class Database
   dbBulkFileGetAll: (callback) ->
     db = new sqlite3.Database('data.db')
     db.all "SELECT rowid AS id, path, tag, filename, filtered_filename, width,
-      height, size, duration FROM FILES", (err, rows) ->
+      height, size, duration FROM MEDIAFILES", (err, rows) ->
       db.close ->
         callback rows
 
   dbBulkFileGetTag: (tag, callback) ->
     db = new sqlite3.Database('data.db')
     db.all "SELECT rowid AS id, path, tag, filename, filtered_filename, width,
-      height, size, duration FROM FILES WHERE tag=#{tag}", (err, rows) ->
+      height, size, duration FROM MEDIAFILES WHERE tag=#{tag}", (err, rows) ->
       db.close ->
         callback rows
 
@@ -59,7 +68,7 @@ class Database
     db = new sqlite3.Database('data.db')
 
     # prepare sql  statement
-    stmt = db.prepare("UPDATE FILES SET tag=?, filename=?,
+    stmt = db.prepare("UPDATE MEDIAFILES SET tag=?, filename=?,
       filtered_filename=?, width=?, height=?, size=?,
       duration=? WHERE path=?")
     arrayLength = array.length

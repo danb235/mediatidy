@@ -1,7 +1,7 @@
-dir = require('node-dir')
-fs = require('fs-extra')
-probe = require('node-ffprobe')
-async = require('async')
+dir = require 'node-dir'
+fs = require 'fs-extra'
+probe = require 'node-ffprobe'
+async = require 'async'
 colors = require 'colors'
 prompt = require 'prompt'
 Database = require './db'
