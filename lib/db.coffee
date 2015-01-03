@@ -3,8 +3,13 @@ async = require 'async'
 
 class Database
 
+  # store database in home dir
+  dbFile: """
+  #{process.env.HOME or process.env.HOMEPATH or process.env.USERPROFILE}/.mediatidy/data.db
+  """
+
   dbBulkFileAdd: (array, callback) ->
-    db = new sqlite3.Database('data.db')
+    db = new sqlite3.Database(@dbFile)
 
     # prepare sql statement
     stmt = db.prepare("INSERT OR IGNORE INTO MEDIAFILES (path, tag) VALUES (?,?)")
@@ -20,34 +25,34 @@ class Database
       callback arrayLength
 
   dbBulkFileDelete: (callback) ->
-    db = new sqlite3.Database('data.db')
+    db = new sqlite3.Database(@dbFile)
     db.run "DELETE FROM MEDIAFILES", ->
       db.close ->
         callback()
 
   dbBulkFileGetAll: (callback) ->
-    db = new sqlite3.Database('data.db')
+    db = new sqlite3.Database(@dbFile)
     db.all "SELECT rowid AS id, path, tag, filename, filtered_filename, width,
       height, size, duration FROM MEDIAFILES", (err, rows) ->
       db.close ->
         callback rows
 
   dbBulkFileDeleteAll: (callback) ->
-    db = new sqlite3.Database('data.db')
+    db = new sqlite3.Database(@dbFile)
     db.all "SELECT rowid AS id, path, tag, filename, filtered_filename, width,
       height, size, duration FROM MEDIAFILES", (err, rows) ->
       db.close ->
         callback rows
 
   dbBulkFileGetTag: (tag, callback) ->
-    db = new sqlite3.Database('data.db')
+    db = new sqlite3.Database(@dbFile)
     db.all "SELECT rowid AS id, path, tag, filename, filtered_filename, width,
       height, size, duration FROM MEDIAFILES WHERE tag=#{tag}", (err, rows) ->
       db.close ->
         callback rows
 
   dbBulkFileUpdate: (array, callback) ->
-    db = new sqlite3.Database('data.db')
+    db = new sqlite3.Database(@dbFile)
 
     # prepare sql  statement
     stmt = db.prepare("UPDATE MEDIAFILES SET tag=?, filename=?,
@@ -67,13 +72,13 @@ class Database
       callback arrayLength
 
   dbBulkPathGet: (tag, callback) ->
-    db = new sqlite3.Database('data.db')
+    db = new sqlite3.Database(@dbFile)
     db.all "SELECT rowid AS id, path, tag FROM PATHS WHERE tag=#{tag}", (err, rows) ->
       db.close ->
         callback rows
 
   dbPathAdd: (path, tag, callback) ->
-    db = new sqlite3.Database('data.db')
+    db = new sqlite3.Database(@dbFile)
 
     # prepare sql statement
     stmt = db.prepare("INSERT OR IGNORE INTO PATHS (path, tag) VALUES (?,?)")
@@ -85,13 +90,13 @@ class Database
       callback()
 
   dbPathDelete: (tag, callback) ->
-    db = new sqlite3.Database('data.db')
+    db = new sqlite3.Database(@dbFile)
     db.run "DELETE FROM PATHS WHERE tag=#{tag}", ->
       db.close ->
         callback()
 
   dbSetup: (callback) ->
-    db = new sqlite3.Database('data.db')
+    db = new sqlite3.Database(@dbFile)
 
     async.series [
       (seriesCallback) ->

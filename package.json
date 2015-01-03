@@ -1,5 +1,4 @@
 {
-  "private": true,
   "preferGlobal": true,
   "main": "index",
   "name": "mediatidy",
