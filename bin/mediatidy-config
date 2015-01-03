@@ -5,9 +5,8 @@ prompt = require 'prompt'
 async = require 'async'
 Config = require '../lib/config'
 
-program
-  .option('-p, --path <movie directory>', 'the location where movies are stored')
-  .option('-y, --yes', 'accept all defaults to questions')
+# program
+#   .option('-y, --yes', 'accept all defaults to questions')
 
 program
   .command('paths-update')
