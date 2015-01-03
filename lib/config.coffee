@@ -3,6 +3,34 @@ Database = require './db'
 
 class Config extends Database
 
+  filesDelete: (callback) ->
+    console.log '==> '.cyan.bold + 'remove all media files from mediatidy'
+    @dbBulkFileGetAll (array) =>
+      console.log array.length + " files currently in the mediatidy database."
+
+      prompt.message = "mediatidy".yellow
+      prompt.delimiter = ": ".green
+      prompt.properties =
+        yesno:
+          default: 'no'
+          message: 'Delete all files from the mediatidy database?'
+          required: true
+          warning: "Must respond yes or no"
+          validator: /y[es]*|n[o]?/
+
+      # Start the prompt
+      prompt.start()
+
+      # get the simple yes or no property
+      prompt.get ['yesno'], (err, result) =>
+        if result.yesno.match(/yes/i)
+          @dbBulkFileDelete =>
+            console.log "All files removed from mediatidy..."
+            callback()
+        else
+          console.log "No files were removed from mediatidy..."
+          callback()
+
   pathsDelete: (callback) ->
     console.log '==> '.cyan.bold + 'remove all media paths from mediatidy'
     @dbBulkPathGet '\'MEDIA\'', (array) =>

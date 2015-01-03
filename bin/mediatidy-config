@@ -42,6 +42,23 @@ program
     ], (err, results) ->
       # console.log 'Results:', results
 
+program
+  .command('files-clear')
+  .description('purge all media files from the database')
+  .action () ->
+    config = new Config
+
+    async.series [
+      (seriesCallback) ->
+        config.setup ->
+          seriesCallback()
+      (seriesCallback) ->
+        config.filesDelete ->
+          seriesCallback()
+    # optional callback
+    ], (err, results) ->
+      # console.log 'Results:', results
+
 program.parse process.argv
 
 program.help() if program.args.length is 0

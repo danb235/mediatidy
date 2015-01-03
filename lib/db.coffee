@@ -19,23 +19,20 @@ class Database
     db.close ->
       callback arrayLength
 
-  dbBulkFileDelete: (array, callback) ->
+  dbBulkFileDelete: (callback) ->
     db = new sqlite3.Database('data.db')
-
-    # prepare sql  statement
-    stmt = db.prepare("DELETE FROM MEDIAFILES WHERE path=?")
-    arrayLength = array.length
-    i = 0
-    while i < arrayLength
-      stmt.run array[i].path
-      i++
-
-    # insert data into db
-    stmt.finalize
-    db.close ->
-      callback arrayLength
+    db.run "DELETE FROM MEDIAFILES", ->
+      db.close ->
+        callback()
 
   dbBulkFileGetAll: (callback) ->
+    db = new sqlite3.Database('data.db')
+    db.all "SELECT rowid AS id, path, tag, filename, filtered_filename, width,
+      height, size, duration FROM MEDIAFILES", (err, rows) ->
+      db.close ->
+        callback rows
+
+  dbBulkFileDeleteAll: (callback) ->
     db = new sqlite3.Database('data.db')
     db.all "SELECT rowid AS id, path, tag, filename, filtered_filename, width,
       height, size, duration FROM MEDIAFILES", (err, rows) ->

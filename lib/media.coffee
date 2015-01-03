@@ -11,6 +11,7 @@ class Media extends Database
   addFiles: (callback) ->
     console.log '==> '.cyan.bold + 'search for and add files to database...'
 
+    # video file extensions
     movieFileExtensions = [
       /\.3gp$/i
       /\.asf$/i
@@ -28,55 +29,60 @@ class Media extends Database
       /\.wmv$/i
     ]
 
+    # get base paths from db
     @dbBulkPathGet '\'MEDIA\'', (array) =>
-      # get files asynchronously for each 'MEDIA' path
-      async.eachSeries array, ((basePath, seriesCallback) =>
+      if array.length is 0
+        console.log "No paths have been added to mediatidy. Add paths to your media files with",
+          "\"mediatidy config paths-update\"".red
+      else
+        # get files asynchronously for each 'MEDIA' path
+        async.eachSeries array, ((basePath, seriesCallback) =>
 
-        # get files for given path
-        dir.paths basePath.path, (err, paths) =>
-          throw err if err
-
-          # add files to db asynchronously
-          async.waterfall [
-            # add video files to db
-            (callback) =>
-              # filter files with video file extension
-              @filterFileTypes paths.files, movieFileExtensions, (movieFiles) ->
-                callback null, movieFiles
-            (movieFiles, callback) =>
-              # convert array of files to array of objects
-              @convertArray movieFiles, 'VIDEO', (fileObjects) ->
-                callback null, fileObjects
-            (fileObjects, callback) =>
-              # add files to database
-              @dbBulkFileAdd fileObjects, (result) ->
-                # throw err if err
-                console.log basePath.path + ':', result, 'video file types'
-                callback()
-
-            # add all other files to db
-            (callback) =>
-              # filter files without video extensions
-              @filterFileTypesOpposite paths.files, movieFileExtensions, (otherFiles) ->
-                callback null, otherFiles
-            (otherFiles, callback) =>
-              # convert array of files to array of objects
-              @convertArray otherFiles, 'OTHER', (fileObjects) ->
-                callback null, fileObjects
-            (fileObjects, callback) =>
-              # add files to database
-              @dbBulkFileAdd fileObjects, (result) ->
-                # throw err if err
-                console.log basePath.path + ':', result, 'other file types'
-                callback()
-          ], (err, result) ->
+          # get files for given path
+          dir.paths basePath.path, (err, paths) =>
             throw err if err
-            seriesCallback()
-      ), (err) ->
-        if err
-          console.log "Something broke when looking for files...", err
-        else
-          callback()
+
+            # add files to db asynchronously
+            async.waterfall [
+              # add video files to db
+              (callback) =>
+                # filter files with video file extension
+                @filterFileTypes paths.files, movieFileExtensions, (movieFiles) ->
+                  callback null, movieFiles
+              (movieFiles, callback) =>
+                # convert array of files to array of objects
+                @convertArray movieFiles, 'VIDEO', (fileObjects) ->
+                  callback null, fileObjects
+              (fileObjects, callback) =>
+                # add files to database
+                @dbBulkFileAdd fileObjects, (result) ->
+                  # throw err if err
+                  console.log basePath.path + ':', result, 'video file types'
+                  callback()
+
+              # add all other files to db
+              (callback) =>
+                # filter files without video extensions
+                @filterFileTypesOpposite paths.files, movieFileExtensions, (otherFiles) ->
+                  callback null, otherFiles
+              (otherFiles, callback) =>
+                # convert array of files to array of objects
+                @convertArray otherFiles, 'OTHER', (fileObjects) ->
+                  callback null, fileObjects
+              (fileObjects, callback) =>
+                # add files to database
+                @dbBulkFileAdd fileObjects, (result) ->
+                  # throw err if err
+                  console.log basePath.path + ':', result, 'other file types'
+                  callback()
+            ], (err, result) ->
+              throw err if err
+              seriesCallback()
+        ), (err) ->
+          if err
+            console.log "Something broke when looking for files...", err
+          else
+            callback()
 
   convertArray: (array, tag, callback) ->
     # convert each result to object
