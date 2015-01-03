@@ -3,21 +3,6 @@ async = require 'async'
 
 class Database
 
-  dbSetup: (callback) ->
-    db = new sqlite3.Database('data.db')
-
-    async.series [
-      (seriesCallback) ->
-        db.run "CREATE TABLE IF NOT EXISTS MEDIAFILES (path TEXT UNIQUE, tag TEXT, filename TEXT,
-          filtered_filename TEXT, width INT, height INT, size INT, duration INT)", ->
-          seriesCallback()
-      (seriesCallback) ->
-        db.run "CREATE TABLE IF NOT EXISTS PATHS (path TEXT UNIQUE, tag TEXT)", ->
-          seriesCallback()
-    ], (err, results) ->
-      db.close ->
-        callback()
-
   dbBulkFileAdd: (array, callback) ->
     db = new sqlite3.Database('data.db')
 
@@ -105,6 +90,21 @@ class Database
   dbPathDelete: (tag, callback) ->
     db = new sqlite3.Database('data.db')
     db.run "DELETE FROM PATHS WHERE tag=#{tag}", ->
+      db.close ->
+        callback()
+
+  dbSetup: (callback) ->
+    db = new sqlite3.Database('data.db')
+
+    async.series [
+      (seriesCallback) ->
+        db.run "CREATE TABLE IF NOT EXISTS MEDIAFILES (path TEXT UNIQUE, tag TEXT, filename TEXT,
+          filtered_filename TEXT, width INT, height INT, size INT, duration INT)", ->
+          seriesCallback()
+      (seriesCallback) ->
+        db.run "CREATE TABLE IF NOT EXISTS PATHS (path TEXT UNIQUE, tag TEXT)", ->
+          seriesCallback()
+    ], (err, results) ->
       db.close ->
         callback()
 
