@@ -27,11 +27,11 @@ npm install
 Update the config with the path to your movie files:
 
 ```
-bin/mediatidy config update
+bin/mediatidy config paths-update
 ```
 
 Update your mediatidy database with your movie files:
 
 ```
-bin/mediatidy movies update
+bin/mediatidy media update
 ```

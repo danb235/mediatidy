@@ -6,8 +6,8 @@ path = require 'path'
 
 program
   .version(pkg.version)
-  .command('movies <action>', 'perform movies <action> such as tidy')
-  .command('config <action>', 'perform config <action> such as update')
+  .command('media <action>', 'perform media file <action> such as tidy')
+  .command('config <action>', 'perform config <action> such as paths-update')
 
 program.parse(process.argv)
 

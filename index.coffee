@@ -1,8 +1,8 @@
-movies = require "./lib/movies"
+media = require "./lib/media"
 config = require "./lib/config"
 database = require "./lib/db"
 
 module.exports =
 	Config: config
 	Database: database
-	Movies: movies
+	Media: media
