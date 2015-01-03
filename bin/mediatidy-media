@@ -1,0 +1,47 @@
+#!/usr/bin/env coffee
+
+program = require 'commander'
+Config = require '../lib/config'
+Media = require '../lib/media'
+colors = require 'colors'
+async = require 'async'
+
+program.option('-a, --apiurl <apiurl>', 'API base URL')
+  .option('-y, --yes', 'Make \'yes\' the default delete response (dangerous!)')
+  .option('-s, --clientsecret <clientsecret>', 'OAuth2 Client secret')
+  .option('-j, --json', 'display results in JSON')
+
+program.command('update')
+  .description('look for for files and directories and add to mediatidy database')
+  .action () ->
+    media = new Media
+
+    async.series [
+      (callback) ->
+        media.setup ->
+          callback()
+      (callback) ->
+        media.addFiles ->
+          callback()
+      (callback) ->
+        media.exists ->
+          callback()
+      (callback) ->
+        media.fileMetaUpdate ->
+          callback()
+      (callback) ->
+        media.deleteCorrupt ->
+          callback()
+      (callback) ->
+        media.deleteSamples ->
+          callback()
+      (callback) ->
+        media.deleteOthers ->
+          callback()
+    # optional callback
+    ], (err, results) ->
+      # console.log 'Results:', results
+
+program.parse process.argv
+
+program.help() if program.args.length is 0
