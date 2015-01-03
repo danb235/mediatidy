@@ -84,9 +84,9 @@ class Database
     db.close ->
       callback arrayLength
 
-  dbBulkPathGetAll: (callback) ->
+  dbBulkPathGet: (tag, callback) ->
     db = new sqlite3.Database('data.db')
-    db.all "SELECT rowid AS id, path, tag FROM PATHS", (err, rows) ->
+    db.all "SELECT rowid AS id, path, tag FROM PATHS WHERE tag=#{tag}", (err, rows) ->
       db.close ->
         callback rows
 
@@ -101,5 +101,11 @@ class Database
     stmt.finalize
     db.close ->
       callback()
+
+  dbPathDelete: (tag, callback) ->
+    db = new sqlite3.Database('data.db')
+    db.run "DELETE FROM PATHS WHERE tag=#{tag}", ->
+      db.close ->
+        callback()
 
 module.exports = Database
