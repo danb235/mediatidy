@@ -14,7 +14,7 @@ program.option('-a, --apiurl <apiurl>', 'API base URL')
 program.command('update')
   .description('look for for files and directories and add to mediatidy database')
   .action () ->
-    movie = new Movies Config.get('path')
+    movie = new Movies
 
     async.series [
       (callback) ->

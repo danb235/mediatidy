@@ -7,7 +7,7 @@ prompt = require 'prompt'
 Database = require './db'
 
 class Movies extends Database
-  constructor: (@path) ->
+  # constructor: (@path) ->
 
   setup: (callback) ->
     @dbSetup ->
@@ -45,6 +45,7 @@ class Movies extends Database
       prompt.delimiter = ": ".green
       prompt.properties =
         yesno:
+          default: 'no'
           message: message
           required: true
           warning: "Must respond yes or no"
@@ -210,46 +211,55 @@ class Movies extends Database
       /\.wmv$/i
     ]
 
-    path = @path
-    dir.paths path, (err, paths) =>
-      throw err if err
+    @dbBulkPathGet '\'MEDIA\'', (array) =>
+      # get files asynchronously for each 'MEDIA' path
+      async.eachSeries array, ((basePath, seriesCallback) =>
 
-      # add files to db asynchronously
-      async.waterfall [
-        # add video files to db
-        (callback) =>
-          # filter files with video file extension
-          @filterFileTypes paths.files, movieFileExtensions, (movieFiles) ->
-            callback null, movieFiles
-        (movieFiles, callback) =>
-          # convert array of files to array of objects
-          @convertArray movieFiles, 'VIDEO', (fileObjects) ->
-            callback null, fileObjects
-        (fileObjects, callback) =>
-          # add files to database
-          @dbBulkFileAdd fileObjects, (result) ->
-            # throw err if err
-            console.log 'video file types found and added to db:', result
-            callback()
+        # get files for given path
+        dir.paths basePath.path, (err, paths) =>
+          throw err if err
 
-        # add all other files to db
-        (callback) =>
-          # filter files without video extensions
-          @filterFileTypesOpposite paths.files, movieFileExtensions, (otherFiles) ->
-            callback null, otherFiles
-        (otherFiles, callback) =>
-          # convert array of files to array of objects
-          @convertArray otherFiles, 'OTHER', (fileObjects) ->
-            callback null, fileObjects
-        (fileObjects, callback) =>
-          # add files to database
-          @dbBulkFileAdd fileObjects, (result) ->
-            # throw err if err
-            console.log 'other file types found and added to db:', result
-            callback()
-      ], (err, result) ->
-        throw err if err
-        callback()
+          # add files to db asynchronously
+          async.waterfall [
+            # add video files to db
+            (callback) =>
+              # filter files with video file extension
+              @filterFileTypes paths.files, movieFileExtensions, (movieFiles) ->
+                callback null, movieFiles
+            (movieFiles, callback) =>
+              # convert array of files to array of objects
+              @convertArray movieFiles, 'VIDEO', (fileObjects) ->
+                callback null, fileObjects
+            (fileObjects, callback) =>
+              # add files to database
+              @dbBulkFileAdd fileObjects, (result) ->
+                # throw err if err
+                console.log basePath.path + ':', result, 'video file types'
+                callback()
+
+            # add all other files to db
+            (callback) =>
+              # filter files without video extensions
+              @filterFileTypesOpposite paths.files, movieFileExtensions, (otherFiles) ->
+                callback null, otherFiles
+            (otherFiles, callback) =>
+              # convert array of files to array of objects
+              @convertArray otherFiles, 'OTHER', (fileObjects) ->
+                callback null, fileObjects
+            (fileObjects, callback) =>
+              # add files to database
+              @dbBulkFileAdd fileObjects, (result) ->
+                # throw err if err
+                console.log basePath.path + ':', result, 'other file types'
+                callback()
+          ], (err, result) ->
+            throw err if err
+            seriesCallback()
+      ), (err) ->
+        if err
+          console.log "Something broke when looking for files...", err
+        else
+          callback()
 
   convertArray: (array, tag, callback) ->
     # convert each result to object
