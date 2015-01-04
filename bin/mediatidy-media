@@ -6,10 +6,8 @@ Media = require '../lib/media'
 colors = require 'colors'
 async = require 'async'
 
-program.option('-a, --apiurl <apiurl>', 'API base URL')
-  .option('-y, --yes', 'Make \'yes\' the default delete response (dangerous!)')
-  .option('-s, --clientsecret <clientsecret>', 'OAuth2 Client secret')
-  .option('-j, --json', 'display results in JSON')
+# program
+#   .option('-y, --yes', 'Make \'yes\' the default delete response (dangerous!)')
 
 program.command('update')
   .description('look for for files and directories and add to mediatidy database')
