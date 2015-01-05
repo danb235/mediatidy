@@ -3,13 +3,10 @@ async = require 'async'
 
 class Database
 
-  # # store database in home dir
-  # dbFile: """
-  # #{process.env.HOME or process.env.HOMEPATH or process.env.USERPROFILE}/.mediatidy/data.db
-  # """
-
   # store database in home dir
-  dbFile: "data.db"
+  dbFile: """
+  #{process.env.HOME or process.env.HOMEPATH or process.env.USERPROFILE}/.mediatidy/data.db
+  """
 
   dbBulkFileAdd: (array, callback) ->
     db = new sqlite3.Database(@dbFile)
