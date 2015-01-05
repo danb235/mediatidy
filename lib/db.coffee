@@ -3,10 +3,13 @@ async = require 'async'
 
 class Database
 
+  # # store database in home dir
+  # dbFile: """
+  # #{process.env.HOME or process.env.HOMEPATH or process.env.USERPROFILE}/.mediatidy/data.db
+  # """
+
   # store database in home dir
-  dbFile: """
-  #{process.env.HOME or process.env.HOMEPATH or process.env.USERPROFILE}/.mediatidy/data.db
-  """
+  dbFile: "data.db"
 
   dbBulkFileAdd: (array, callback) ->
     db = new sqlite3.Database(@dbFile)
@@ -24,20 +27,23 @@ class Database
     db.close ->
       callback arrayLength
 
-  dbBulkFileDelete: (callback) ->
+  dbBulkFileDelete: (array, callback) ->
     db = new sqlite3.Database(@dbFile)
-    db.run "DELETE FROM MEDIAFILES", ->
-      db.close ->
-        callback()
+
+    # prepare sql statement
+    stmt = db.prepare("DELETE FROM MEDIAFILES WHERE path=?")
+    arrayLength = array.length
+    i = 0
+    while i < arrayLength
+      stmt.run array[i].path
+      i++
+
+    stmt.finalize
+    console.log stmt
+    db.close ->
+      callback arrayLength
 
   dbBulkFileGetAll: (callback) ->
-    db = new sqlite3.Database(@dbFile)
-    db.all "SELECT rowid AS id, path, tag, filename, filtered_filename, width,
-      height, size, duration FROM MEDIAFILES", (err, rows) ->
-      db.close ->
-        callback rows
-
-  dbBulkFileDeleteAll: (callback) ->
     db = new sqlite3.Database(@dbFile)
     db.all "SELECT rowid AS id, path, tag, filename, filtered_filename, width,
       height, size, duration FROM MEDIAFILES", (err, rows) ->
