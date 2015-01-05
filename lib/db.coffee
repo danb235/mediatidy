@@ -39,7 +39,6 @@ class Database
       i++
 
     stmt.finalize
-    console.log stmt
     db.close ->
       callback arrayLength
 
