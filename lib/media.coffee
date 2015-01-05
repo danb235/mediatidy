@@ -156,7 +156,7 @@ class Media extends Database
 
     @dbBulkFileGetAll (files) =>
       @checkExists files, (missingFiles) =>
-        if missingFiles > 0
+        if missingFiles.length > 0
           @dbBulkFileDelete missingFiles, ->
             console.log 'finished removing missing files from mediatidy database'
             callback()
@@ -183,8 +183,8 @@ class Media extends Database
 
     if arrayLength > 0
 
-      # get files asynchronously for each 'MEDIA' path
-      async.eachLimit array, 4, ((file, limitCallback) =>
+      # get files for each 'MEDIA' path
+      async.eachLimit array, 8, ((file, limitCallback) =>
 
         probe file.path, (err, probeData) =>
           # throw err if err
