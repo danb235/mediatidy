@@ -181,60 +181,54 @@ class Media extends Database
     probedFiles = []
     arrayLength = array.length
 
-    if arrayLength > 0
+    singleFileProbe = (iteration) =>
+      probe array[iteration].path, (err, probeData) =>
+        # throw err if err
+        # console.log 'lolwut', iteration, array[iteration]
+        # loop through streams to find video stream
+        if typeof probeData is "undefined" or probeData["streams"].length is 0
+          array[iteration].tag = 'CORRUPT'
+          probedFiles.push array[iteration]
+        else if probeData.filename.match(/sample/i)
+          array[iteration].tag = 'SAMPLE'
+          probedFiles.push array[iteration]
+        else if probeData["streams"].length > 0
 
-      # get files for each 'MEDIA' path
-      async.eachLimit array, 4, ((file, limitCallback) =>
+          # filter file name for future matching
+          filteredFileName = probeData.filename.replace(/\.\w*$/, "")
+          filteredFileName = filteredFileName.replace(/\s/g, "")
+          filteredFileName = filteredFileName.replace(/\W/g, "")
+          filteredFileName = filteredFileName.replace(/\d{4}.*$/g, "")
+          filteredFileName = filteredFileName.toUpperCase()
 
-        probe file.path, (err, probeData) =>
-          # throw err if err
-          # console.log 'lolwut', iteration, array[iteration]
-          # loop through streams to find video stream
-          if typeof probeData is "undefined" or probeData["streams"].length is 0
-            file.tag = 'CORRUPT'
-            probedFiles.push file
-            process.stdout.write('.')
-            limitCallback()
-          else if probeData.filename.match(/sample/i)
-            file.tag = 'SAMPLE'
-            probedFiles.push file
-            process.stdout.write('.')
-            limitCallback()
-          else if probeData["streams"].length > 0
+          # set filename and filtered file name
+          array[iteration].filename = probeData.filename
+          array[iteration].filtered_filename = filteredFileName
 
-            # filter file name for future matching
-            filteredFileName = probeData.filename.replace(/\.\w*$/, "")
-            filteredFileName = filteredFileName.replace(/\s/g, "")
-            filteredFileName = filteredFileName.replace(/\W/g, "")
-            filteredFileName = filteredFileName.replace(/\d{4}.*$/g, "")
-            filteredFileName = filteredFileName.toUpperCase()
+          # get video files details
+          async.eachSeries probeData["streams"], (stream, streamCallback) =>
+            # find video stream and make sure it has relevant data
+            if stream.codec_type is "video"
+              if typeof stream.width is "number" and stream.width > 0
+                array[iteration].tag = 'HEALTHY'
+                array[iteration].width = stream.width
+                array[iteration].height = stream.height
+                array[iteration].size = probeData["format"].size
+                array[iteration].duration = probeData["format"].duration
 
-            # set filename and filtered file name
-            file.filename = probeData.filename
-            file.filtered_filename = filteredFileName
+                probedFiles.push array[iteration]
+            streamCallback()
 
-            # get video files details
-            async.eachSeries probeData["streams"], (stream, streamCallback) =>
-              # find video stream and make sure it has relevant data
-              if stream.codec_type is "video"
-                if typeof stream.width is "number" and stream.width > 0
-                  file.tag = 'HEALTHY'
-                  file.width = stream.width
-                  file.height = stream.height
-                  file.size = probeData["format"].size
-                  file.duration = probeData["format"].duration
-
-                  probedFiles.push file
-                  process.stdout.write('.')
-                  limitCallback()
-      ), (err) ->
-        if err
-          console.log "Something broke when probing files...", err
-        else
+        if arrayLength is iteration + 1
           process.stdout.write(".done\n")
           console.log probedFiles.length + ' out of ' + arrayLength + ' files probed...'
           callback probedFiles
-
+        else
+          process.stdout.write('.')
+          singleFileProbe(iteration + 1)
+    if arrayLength > 0
+      process.stdout.write('.')
+      singleFileProbe(0)
     else
       console.log 'No files in database to probe...'
       callback()
