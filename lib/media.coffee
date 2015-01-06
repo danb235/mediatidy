@@ -184,7 +184,7 @@ class Media extends Database
     if arrayLength > 0
 
       # get files for each 'MEDIA' path
-      async.eachLimit array, 8, ((file, limitCallback) =>
+      async.eachLimit array, 4, ((file, limitCallback) =>
 
         probe file.path, (err, probeData) =>
           # throw err if err
