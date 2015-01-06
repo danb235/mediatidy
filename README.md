@@ -5,6 +5,8 @@ For anyone with a large media collection (movies and tv shows) who craves file o
 
 This project is early in dev and a WIP. Please file issues!
 
+## About
+
 Point **mediatidy** at your movie or TV show directory and it will do the following (any file deletion requires your approval):
 * Delete all non-video type files
 * Delete all corrupt/incomplete video files
