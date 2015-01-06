@@ -3,7 +3,7 @@
   "main": "index",
   "name": "mediatidy",
   "description": "Keep your media nice and tidy!",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "repository": {
     "type": "git",
     "url": "git@github.com:tkdan235/mediatidy.git"
