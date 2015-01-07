@@ -5,6 +5,8 @@ class Config extends Database
 
   filesDelete: (callback) ->
     console.log '==> '.cyan.bold + 'remove all media files from mediatidy'
+
+    # get files total to display to user
     @dbBulkFileGetAll (array) =>
       console.log array.length + " files currently in the mediatidy database."
 
@@ -33,8 +35,11 @@ class Config extends Database
 
   pathsDelete: (callback) ->
     console.log '==> '.cyan.bold + 'remove all media paths from mediatidy'
+
+    # get all paths
     @dbBulkPathGet '\'MEDIA\'', (array) =>
 
+      # display paths to user
       arrayLength = array.length
       i = 0
       while i < arrayLength
@@ -67,6 +72,7 @@ class Config extends Database
   pathDropPromptYesNo: (callback) ->
     @dbBulkPathGet '\'MEDIA\'', (array) =>
 
+      # display paths to user
       arrayLength = array.length
       i = 0
       while i < arrayLength

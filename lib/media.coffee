@@ -56,7 +56,6 @@ class Media extends Database
               (fileObjects, callback) =>
                 # add files to database
                 @dbBulkFileAdd fileObjects, (result) ->
-                  # throw err if err
                   console.log basePath.path + ':', result, 'video file types'
                   callback()
 
@@ -72,7 +71,6 @@ class Media extends Database
               (fileObjects, callback) =>
                 # add files to database
                 @dbBulkFileAdd fileObjects, (result) ->
-                  # throw err if err
                   console.log basePath.path + ':', result, 'other file types'
                   callback()
             ], (err, result) ->
@@ -85,7 +83,7 @@ class Media extends Database
             callback()
 
   convertArray: (array, tag, callback) ->
-    # convert each result to object
+    # convert each result from array to array of objects
     arrayObjects = []
     if array.length > 0
       arrayLength = array.length
@@ -101,6 +99,7 @@ class Media extends Database
       callback arrayObjects
 
   checkExists: (array, callback) ->
+    # check that each file path in database exists in the file system
     missingFiles = []
     arrayLength = array.length
 
@@ -124,6 +123,7 @@ class Media extends Database
     console.log '==> '.cyan.bold + 'delete video files which appear to be corrupt'
     # get all files with tag 'CORRUPT'
     @dbBulkFileGetTag '\'CORRUPT\'', (files) =>
+      # prompt user to delete corrupt files
       promptMessage = "Delete all video files which are considered corrupt files?"
       @promptUserBulkDelete files, promptMessage, ->
         callback()
@@ -132,6 +132,7 @@ class Media extends Database
     console.log '==> '.cyan.bold + 'delete files which are not video types'
     # get all files with tag 'OTHER'
     @dbBulkFileGetTag '\'OTHER\'', (files) =>
+      # prompt user to delete other files
       promptMessage = "Delete all files that are not video types?"
       @promptUserBulkDelete files, promptMessage, ->
         callback()
@@ -140,6 +141,7 @@ class Media extends Database
     console.log '==> '.cyan.bold + 'delete video files which appear to be sample files'
     # get all files with tag 'SAMPLE'
     @dbBulkFileGetTag '\'SAMPLE\'', (files) =>
+      # prompt user to delete sample files
       promptMessage = "Delete all video files which are considered sample files?"
       @promptUserBulkDelete files, promptMessage, ->
         callback()
@@ -154,9 +156,12 @@ class Media extends Database
   exists: (callback) ->
     console.log '==> '.cyan.bold + 'removing files and directories from database that no longer exist'
 
+    # get all files
     @dbBulkFileGetAll (files) =>
+      # check if files exist for a given path
       @checkExists files, (missingFiles) =>
         if missingFiles.length > 0
+          # remove missing files from database
           @dbBulkFileDelete missingFiles, ->
             console.log 'finished removing missing files from mediatidy database'
             callback()
@@ -169,8 +174,10 @@ class Media extends Database
     # get all files with tag 'VIDEO'
     @dbBulkFileGetTag '\'VIDEO\'', (files) =>
       console.log 'Found: ' + files.length + ' video files that need metadata update'
+      # probe each files that does not have meta info
       @filesProbe files, (probedFiles) =>
         if probedFiles
+          # update database with meta info
           @dbBulkFileUpdate probedFiles, ->
             console.log 'finished adding probe data to mediatidy database'
             callback()
@@ -178,20 +185,24 @@ class Media extends Database
           callback()
 
   filesProbe: (array, callback) ->
+    # gather information about media files
     probedFiles = []
     arrayLength = array.length
 
     singleFileProbe = (iteration) =>
       probe array[iteration].path, (err, probeData) =>
-        # throw err if err
-        # console.log 'lolwut', iteration, array[iteration]
-        # loop through streams to find video stream
+
+        # tag corrupt files
         if typeof probeData is "undefined" or probeData["streams"].length is 0
           array[iteration].tag = 'CORRUPT'
           probedFiles.push array[iteration]
+
+        # tag sample files
         else if probeData.filename.match(/sample/i)
           array[iteration].tag = 'SAMPLE'
           probedFiles.push array[iteration]
+
+        # otherwise continue
         else if probeData["streams"].length > 0
 
           # filter file name for future matching
@@ -205,17 +216,18 @@ class Media extends Database
           array[iteration].filename = probeData.filename
           array[iteration].filtered_filename = filteredFileName
 
-          # get video files details
+          # loop through video streams to find needed stream info
           async.eachSeries probeData["streams"], (stream, streamCallback) =>
-            # find video stream and make sure it has relevant data
             if stream.codec_type is "video"
               if typeof stream.width is "number" and stream.width > 0
+                # add relevent date to object
                 array[iteration].tag = 'HEALTHY'
                 array[iteration].width = stream.width
                 array[iteration].height = stream.height
                 array[iteration].size = probeData["format"].size
                 array[iteration].duration = probeData["format"].duration
 
+                # push object to array
                 probedFiles.push array[iteration]
             streamCallback()
 
@@ -251,6 +263,7 @@ class Media extends Database
 
   promptUserBulkDelete: (array, message, callback) ->
     if array.length > 0
+      # display media files up for deletion
       arrayLength = array.length
       i = 0
       while i < arrayLength
@@ -295,6 +308,7 @@ class Media extends Database
       callback()
 
   setup: (callback) ->
+    # setup the database
     @dbSetup ->
       callback()
 
