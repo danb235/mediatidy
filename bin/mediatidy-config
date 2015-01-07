@@ -21,9 +21,9 @@ program
       (seriesCallback) ->
         config.pathPrompt ->
           seriesCallback()
-    # optional callback
     ], (err, results) ->
-      # console.log 'Results:', results
+      throw err if err
+      console.log 'path update complete.'
 
 program
   .command('paths-clear')
@@ -38,9 +38,9 @@ program
       (seriesCallback) ->
         config.pathsDelete ->
           seriesCallback()
-    # optional callback
     ], (err, results) ->
-      # console.log 'Results:', results
+      throw err if err
+      console.log 'path clear complete.'
 
 program
   .command('files-clear')
@@ -55,9 +55,9 @@ program
       (seriesCallback) ->
         config.filesDelete ->
           seriesCallback()
-    # optional callback
     ], (err, results) ->
-      # console.log 'Results:', results
+      throw err if err
+      console.log 'files clear complete.'
 
 program.parse process.argv
 

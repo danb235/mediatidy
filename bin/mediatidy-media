@@ -36,9 +36,9 @@ program.command('update')
       (callback) ->
         media.deleteOthers ->
           callback()
-    # optional callback
     ], (err, results) ->
-      # console.log 'Results:', results
+      throw err if err
+      console.log 'media update complete.'
 
 program.parse process.argv
 
