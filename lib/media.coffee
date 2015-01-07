@@ -38,43 +38,48 @@ class Media extends Database
         # get files asynchronously for each 'MEDIA' path
         async.eachSeries array, ((basePath, seriesCallback) =>
 
-          # get files for given path
-          dir.paths basePath.path, (err, paths) =>
-            throw err if err
+          fs.exists basePath.path, (exists) =>
+            if exists
+              # get files for given path
+              dir.paths basePath.path, (err, paths) =>
+                throw err if err
 
-            # add files to db asynchronously
-            async.waterfall [
-              # add video files to db
-              (callback) =>
-                # filter files with video file extension
-                @filterFileTypes paths.files, movieFileExtensions, (movieFiles) ->
-                  callback null, movieFiles
-              (movieFiles, callback) =>
-                # convert array of files to array of objects
-                @convertArray movieFiles, 'VIDEO', (fileObjects) ->
-                  callback null, fileObjects
-              (fileObjects, callback) =>
-                # add files to database
-                @dbBulkFileAdd fileObjects, (result) ->
-                  console.log basePath.path + ':', result, 'video file types'
-                  callback()
+                # add files to db asynchronously
+                async.waterfall [
+                  # add video files to db
+                  (callback) =>
+                    # filter files with video file extension
+                    @filterFileTypes paths.files, movieFileExtensions, (movieFiles) ->
+                      callback null, movieFiles
+                  (movieFiles, callback) =>
+                    # convert array of files to array of objects
+                    @convertArray movieFiles, 'VIDEO', (fileObjects) ->
+                      callback null, fileObjects
+                  (fileObjects, callback) =>
+                    # add files to database
+                    @dbBulkFileAdd fileObjects, (result) ->
+                      console.log basePath.path + ':', result, 'video file types...'
+                      callback()
 
-              # add all other files to db
-              (callback) =>
-                # filter files without video extensions
-                @filterFileTypesOpposite paths.files, movieFileExtensions, (otherFiles) ->
-                  callback null, otherFiles
-              (otherFiles, callback) =>
-                # convert array of files to array of objects
-                @convertArray otherFiles, 'OTHER', (fileObjects) ->
-                  callback null, fileObjects
-              (fileObjects, callback) =>
-                # add files to database
-                @dbBulkFileAdd fileObjects, (result) ->
-                  console.log basePath.path + ':', result, 'other file types'
-                  callback()
-            ], (err, result) ->
-              throw err if err
+                  # add all other files to db
+                  (callback) =>
+                    # filter files without video extensions
+                    @filterFileTypesOpposite paths.files, movieFileExtensions, (otherFiles) ->
+                      callback null, otherFiles
+                  (otherFiles, callback) =>
+                    # convert array of files to array of objects
+                    @convertArray otherFiles, 'OTHER', (fileObjects) ->
+                      callback null, fileObjects
+                  (fileObjects, callback) =>
+                    # add files to database
+                    @dbBulkFileAdd fileObjects, (result) ->
+                      console.log basePath.path + ':', result, 'other file types...'
+                      callback()
+                ], (err, result) ->
+                  throw err if err
+                  seriesCallback()
+            else
+              console.log basePath.path, 'could not be found. Consider updating media dirs...'
               seriesCallback()
         ), (err) ->
           if err
@@ -108,8 +113,11 @@ class Media extends Database
         if exists is false
           console.log 'MISSING FILE:'.yellow, array[iteration].path
           missingFiles.push array[iteration]
-        if arrayLength is iteration + 1
+        if arrayLength is iteration + 1 and missingFiles.length > 0
           console.log missingFiles.length + ' out of ' + arrayLength + ' files removed from database...'
+          callback missingFiles
+        if arrayLength is iteration + 1 and missingFiles.length is 0
+          console.log 'No files needed to be removed from database...'
           callback missingFiles
         else
           fileExist(iteration + 1)
@@ -173,7 +181,8 @@ class Media extends Database
 
     # get all files with tag 'VIDEO'
     @dbBulkFileGetTag '\'VIDEO\'', (files) =>
-      console.log 'Found: ' + files.length + ' video files that need metadata update'
+      if files.length > 0
+        console.log 'Found: ' + files.length + ' video files that need metadata update'
       # probe each files that does not have meta info
       @filesProbe files, (probedFiles) =>
         if probedFiles
@@ -242,7 +251,7 @@ class Media extends Database
       process.stdout.write('.')
       singleFileProbe(0)
     else
-      console.log 'No files in database to probe...'
+      console.log 'No files in database needed to be probed...'
       callback()
 
   filterFileTypes: (filesArray, filterArray, callback) ->
@@ -304,7 +313,7 @@ class Media extends Database
           console.log "No files deleted..."
           callback()
     else
-      console.log "No files needed to be deleted!"
+      console.log "No files needed to be deleted..."
       callback()
 
   setup: (callback) ->

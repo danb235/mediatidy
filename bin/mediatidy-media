@@ -14,6 +14,7 @@ program.command('update')
   .action () ->
     media = new Media
 
+    # Perform action in series with async
     async.series [
       (callback) ->
         media.setup ->
@@ -38,7 +39,7 @@ program.command('update')
           callback()
     ], (err, results) ->
       throw err if err
-      console.log 'media update complete.'
+      console.log 'Media update complete.'
 
 program.parse process.argv
 
