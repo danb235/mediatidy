@@ -37,6 +37,9 @@ program.command('update')
       (callback) ->
         media.deleteOthers ->
           callback()
+      (callback) ->
+        media.deleteDupes ->
+          callback()
     ], (err, results) ->
       throw err if err
       console.log 'Media update complete.'

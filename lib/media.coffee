@@ -5,6 +5,7 @@ async = require 'async'
 colors = require 'colors'
 prompt = require 'prompt'
 Database = require './db'
+levenshtein = require 'fast-levenshtein'
 
 class Media extends Database
 
@@ -135,6 +136,40 @@ class Media extends Database
       promptMessage = "Delete all video files which are considered corrupt files?"
       @promptUserBulkDelete files, promptMessage, ->
         callback()
+
+  levenshtein: (array, callback) ->
+    possibleDupes = []
+    arrayLength = array.length
+
+    ldiggity = (iteration, diggityCallback) =>
+      dupe = {}
+      i = iteration + 1
+      while i < arrayLength
+        levenshtein.getAsync array[iteration].filtered_filename, array[i].filtered_filename, (err, distance) =>
+          if distance <= 4
+            console.log distance, array[iteration], array[i]
+        i++
+        if i is arrayLength
+          ldiggity(iteration + 1)
+      if arrayLength is iteration + 1
+        console.log 'donedone...'
+        callback()
+    if arrayLength > 0
+      ldiggity(0)
+    else
+      console.log 'No files in database to check...'
+      callback()
+
+  deleteDupes: (callback) ->
+    console.log '==> '.cyan.bold + 'delete duplicate lower quality video files'
+    # get all files with tag 'CORRUPT'
+    @dbBulkFileGetTag '\'HEALTHY\'', (files) =>
+      @levenshtein files, (dupes) =>
+
+
+
+        # console.log files
+      callback()
 
   deleteOthers: (callback) ->
     console.log '==> '.cyan.bold + 'delete files which are not video types'
