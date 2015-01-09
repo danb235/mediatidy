@@ -137,42 +137,62 @@ class Media extends Database
       @promptUserBulkDelete files, promptMessage, ->
         callback()
 
-  levenshtein: (array, callback) ->
-    console.log
+  findDupes: (array, callback) ->
     possibleDupes = []
+    objectStore = {}
     arrayLength = array.length
 
-    ldiggity = (iteration) =>
-      dupe = []
+    superDuper = (iteration) =>
 
-      # waterfall loop looking for duplicate matches based on filename
-      i = iteration + 1
-      while i < arrayLength
-        # levenshtein algorithm to find fuzzy matches
-        levenshtein.getAsync array[iteration].filtered_filename, array[i].filtered_filename, (err, distance) =>
-          # if a match occurs push to temp array
-          if distance is 0 and array[i].dupe is undefined
-            array[i].dupe = 1
-            dupe.push array[i]
+      console.log 'inside', array[iteration].filtered_filename
+      objectStore[array[iteration].filtered_filename] = [] unless objectStore.hasOwnProperty(array[iteration].filtered_filename)
+      objectStore[array[iteration].filtered_filename].push array[iteration]
 
-          # if we reached the last loop of loops callback!
-          if i is arrayLength - 1 and iteration is arrayLength - 2
-            process.stdout.write(".done\n")
-            callback(possibleDupes)
+      if iteration is arrayLength - 1
+        console.log 'Processing...'
+        for key of objectStore
+          if objectStore.hasOwnProperty(key)
+            if objectStore[key].length > 1
+              possibleDupes.push objectStore[key]
+        callback possibleDupes
+      else
+        superDuper(iteration + 1)
 
-          # if we reached the end of the while loop, push dupe array and
-          # continue to execute function
-          else if i is arrayLength - 1
-            if dupe.length > 0
-              array[iteration].dupe = 1
-              dupe.push array[iteration]
-              possibleDupes.push dupe
-            process.stdout.write(".")
-            ldiggity(iteration + 1)
-          i++
+      # for key of objectByString
+      # if objectByString.hasOwnProperty(key)
+      #   if objectByString[key].length > 1
+      #     data.fileMatches.push objectByString[key]
+      #     process.stdout.write "."
+      #   process.stdout.write "...done\n"
+
+      # # waterfall loop looking for duplicate matches based on filename
+      # i = iteration + 1
+      # while i < arrayLength
+      #   # levenshtein algorithm to find fuzzy matches
+      #   levenshtein.getAsync array[iteration].filtered_filename, array[i].filtered_filename, (err, distance) =>
+      #     # if a match occurs push to temp array
+      #     if distance is 0 and array[i].dupe is undefined
+      #       array[i].dupe = 1
+      #       dupe.push array[i]
+      #
+      #     # if we reached the last loop of loops callback!
+      #     if i is arrayLength - 1 and iteration is arrayLength - 2
+      #       process.stdout.write(".done\n")
+      #       callback(possibleDupes)
+      #
+      #     # if we reached the end of the while loop, push dupe array and
+      #     # continue to execute function
+      #     else if i is arrayLength - 1
+      #       if dupe.length > 0
+      #         array[iteration].dupe = 1
+      #         dupe.push array[iteration]
+      #         possibleDupes.push dupe
+      #       process.stdout.write(".")
+      #       ldiggity(iteration + 1)
+      #     i++
 
     if arrayLength > 0
-      ldiggity(0)
+      superDuper(0)
     else
       console.log 'No files in database to check...'
       callback()
@@ -181,7 +201,7 @@ class Media extends Database
     console.log '==> '.cyan.bold + 'delete duplicate lower quality video files'
     # get all files with tag 'CORRUPT'
     @dbBulkFileGetTag '\'HEALTHY\'', (files) =>
-      @levenshtein files, (dupes) =>
+      @findDupes files, (dupes) =>
         console.log dupes
 
 
