@@ -144,7 +144,6 @@ class Media extends Database
 
     superDuper = (iteration) =>
 
-      console.log 'inside', array[iteration].filtered_filename
       objectStore[array[iteration].filtered_filename] = [] unless objectStore.hasOwnProperty(array[iteration].filtered_filename)
       objectStore[array[iteration].filtered_filename].push array[iteration]
 
