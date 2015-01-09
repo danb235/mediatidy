@@ -44,6 +44,20 @@ program.command('update')
       throw err if err
       console.log 'Media update complete.'
 
+program.command('dupe')
+  .description('find dupes')
+  .action () ->
+    media = new Media
+
+    # Perform action in series with async
+    async.series [
+      (callback) ->
+        media.deleteDupes ->
+          callback()
+    ], (err, results) ->
+      throw err if err
+      console.log 'Dupe complete.'
+
 program.parse process.argv
 
 program.help() if program.args.length is 0
