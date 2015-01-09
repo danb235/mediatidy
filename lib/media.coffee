@@ -141,19 +141,33 @@ class Media extends Database
     possibleDupes = []
     arrayLength = array.length
 
-    ldiggity = (iteration, diggityCallback) =>
-      dupe = {}
+    ldiggity = (iteration) =>
+      dupe = []
+
+      # waterfall loop looking for duplicate matches based on filename
       i = iteration + 1
       while i < arrayLength
+        # levenshtein algorithm to find fuzzy matches
         levenshtein.getAsync array[iteration].filtered_filename, array[i].filtered_filename, (err, distance) =>
-          if distance <= 4
-            console.log distance, array[iteration], array[i]
-        i++
-        if i is arrayLength
-          ldiggity(iteration + 1)
-      if arrayLength is iteration + 1
-        console.log 'donedone...'
-        callback()
+          # if a match occurs push to temp array
+          if distance is 0 and array[i].dupe is undefined
+            array[i].dupe = 1
+            dupe.push array[i]
+
+          # if we reached the last loop of loops callback!
+          if i is arrayLength - 1 and iteration is arrayLength - 2
+            callback(possibleDupes)
+            
+          # if we reached the end of the while loop, push dupe array and
+          # continue to execute function
+          else if i is arrayLength - 1
+            if dupe.length > 0
+              array[iteration].dupe = 1
+              dupe.push array[iteration]
+              possibleDupes.push dupe
+            ldiggity(iteration + 1)
+          i++
+
     if arrayLength > 0
       ldiggity(0)
     else
@@ -165,11 +179,12 @@ class Media extends Database
     # get all files with tag 'CORRUPT'
     @dbBulkFileGetTag '\'HEALTHY\'', (files) =>
       @levenshtein files, (dupes) =>
+        console.log dupes
 
 
 
         # console.log files
-      callback()
+        callback()
 
   deleteOthers: (callback) ->
     console.log '==> '.cyan.bold + 'delete files which are not video types'
