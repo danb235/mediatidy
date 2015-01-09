@@ -149,11 +149,11 @@ class Media extends Database
 
       if iteration is arrayLength - 1
         console.log 'Processing...'
-        for key of objectStore
-          if objectStore.hasOwnProperty(key)
-            if objectStore[key].length > 1
-              possibleDupes.push objectStore[key]
-        callback possibleDupes
+        # for key of objectStore
+        #   if objectStore.hasOwnProperty(key)
+        #     if objectStore[key].length > 1
+        #       possibleDupes.push objectStore[key]
+        # callback possibleDupes
       else
         superDuper(iteration + 1)
 
