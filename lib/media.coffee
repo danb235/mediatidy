@@ -137,6 +137,21 @@ class Media extends Database
       @promptUserBulkDelete files, promptMessage, ->
         callback()
 
+  arrayUnique: (a, callback) ->
+    seen = {}
+    out = []
+    len = a.length
+    j = 0
+    i = 0
+
+    while i < len
+      item = a[i]
+      if seen[item] isnt 1
+        seen[item] = 1
+        out[j++] = item
+      i++
+    callback out
+
   findDupes: (array, callback) ->
     possibleDupes = []
     objectStore = {}
@@ -150,15 +165,21 @@ class Media extends Database
       if iteration is arrayLength - 1
         console.log 'Processing...'
 
-        keys = []
-        for i of objectStore
-          keys.push i  if objectStore.hasOwnProperty(i)
-        console.log keys
-        # for key of objectStore
-        #   if objectStore.hasOwnProperty(key)
-        #     if objectStore[key].length > 1
-        #       possibleDupes.push objectStore[key]
-        # callback possibleDupes
+        uniqify = []
+        asyncObject = (i) =>
+          if objectStore.hasOwnProperty(array[i].filtered_filename)
+            if uniqify.indexOf(array[i].filtered_filename) is -1
+              if objectStore[array[i].filtered_filename].length > 1
+                uniqify.push array[i].filtered_filename
+                possibleDupes.push objectStore[array[i].filtered_filename]
+
+          if i is arrayLength - 1
+            console.log 'done!'
+            callback possibleDupes
+          else
+            asyncObject(i + 1)
+        asyncObject(0)
+
       else
         superDuper(iteration + 1)
 
