@@ -151,8 +151,8 @@ class Media extends Database
         console.log 'Processing...'
 
         keys = []
-          for i of objectStore
-            keys.push i  if objectStore.hasOwnProperty(i)
+        for i of objectStore
+          keys.push i  if objectStore.hasOwnProperty(i)
         console.log keys
         # for key of objectStore
         #   if objectStore.hasOwnProperty(key)
