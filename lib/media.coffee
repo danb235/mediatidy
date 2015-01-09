@@ -149,6 +149,11 @@ class Media extends Database
 
       if iteration is arrayLength - 1
         console.log 'Processing...'
+
+        keys = []
+          for i of objectStore
+            keys.push i  if objectStore.hasOwnProperty(i)
+        console.log keys
         # for key of objectStore
         #   if objectStore.hasOwnProperty(key)
         #     if objectStore[key].length > 1
