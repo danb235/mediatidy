@@ -147,6 +147,7 @@ class Media extends Database
       # waterfall loop looking for duplicate matches based on filename
       i = iteration + 1
       while i < arrayLength
+        console.log arrayLength, iteration, i, array[i].path
         # levenshtein algorithm to find fuzzy matches
         levenshtein.getAsync array[iteration].filtered_filename, array[i].filtered_filename, (err, distance) =>
           # if a match occurs push to temp array
@@ -157,7 +158,7 @@ class Media extends Database
           # if we reached the last loop of loops callback!
           if i is arrayLength - 1 and iteration is arrayLength - 2
             callback(possibleDupes)
-            
+
           # if we reached the end of the while loop, push dupe array and
           # continue to execute function
           else if i is arrayLength - 1
