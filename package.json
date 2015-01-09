@@ -20,6 +20,7 @@
     "coffee-script": "^1.8.0",
     "colors": "^0.6.2",
     "commander": "git://github.com/zhiyelee/commander.js.git#buginfo",
+    "fast-levenshtein": "^1.0.6",
     "fs-extra": "^0.11.1",
     "lodash": "^2.4.1",
     "nconf": "^0.7.1",
