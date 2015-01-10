@@ -5,7 +5,7 @@ async = require 'async'
 colors = require 'colors'
 prompt = require 'prompt'
 Database = require './db'
-levenshtein = require 'fast-levenshtein'
+_ = require 'lodash'
 
 class Media extends Database
 
@@ -137,87 +137,33 @@ class Media extends Database
       @promptUserBulkDelete files, promptMessage, ->
         callback()
 
-  arrayUnique: (a, callback) ->
-    seen = {}
-    out = []
-    len = a.length
-    j = 0
-    i = 0
-
-    while i < len
-      item = a[i]
-      if seen[item] isnt 1
-        seen[item] = 1
-        out[j++] = item
-      i++
-    callback out
-
   findDupes: (array, callback) ->
-    possibleDupes = []
-    objectStore = {}
     arrayLength = array.length
 
-    superDuper = (iteration) =>
-
-      objectStore[array[iteration].filtered_filename] = [] unless objectStore.hasOwnProperty(array[iteration].filtered_filename)
-      objectStore[array[iteration].filtered_filename].push array[iteration]
-
-      if iteration is arrayLength - 1
-        console.log 'Processing...'
-
-        uniqify = []
-        asyncObject = (i) =>
-          if objectStore.hasOwnProperty(array[i].filtered_filename)
-            if uniqify.indexOf(array[i].filtered_filename) is -1
-              if objectStore[array[i].filtered_filename].length > 1
-                uniqify.push array[i].filtered_filename
-                possibleDupes.push objectStore[array[i].filtered_filename]
-
-          if i is arrayLength - 1
-            console.log 'done!'
-            callback possibleDupes
-          else
-            asyncObject(i + 1)
-        asyncObject(0)
-
-      else
-        superDuper(iteration + 1)
-
-      # for key of objectByString
-      # if objectByString.hasOwnProperty(key)
-      #   if objectByString[key].length > 1
-      #     data.fileMatches.push objectByString[key]
-      #     process.stdout.write "."
-      #   process.stdout.write "...done\n"
-
-      # # waterfall loop looking for duplicate matches based on filename
-      # i = iteration + 1
-      # while i < arrayLength
-      #   # levenshtein algorithm to find fuzzy matches
-      #   levenshtein.getAsync array[iteration].filtered_filename, array[i].filtered_filename, (err, distance) =>
-      #     # if a match occurs push to temp array
-      #     if distance is 0 and array[i].dupe is undefined
-      #       array[i].dupe = 1
-      #       dupe.push array[i]
-      #
-      #     # if we reached the last loop of loops callback!
-      #     if i is arrayLength - 1 and iteration is arrayLength - 2
-      #       process.stdout.write(".done\n")
-      #       callback(possibleDupes)
-      #
-      #     # if we reached the end of the while loop, push dupe array and
-      #     # continue to execute function
-      #     else if i is arrayLength - 1
-      #       if dupe.length > 0
-      #         array[iteration].dupe = 1
-      #         dupe.push array[iteration]
-      #         possibleDupes.push dupe
-      #       process.stdout.write(".")
-      #       ldiggity(iteration + 1)
-      #     i++
-
     if arrayLength > 0
-      superDuper(0)
+
+      async.waterfall [
+        (callback) ->
+          objectStore = {}
+          _.forEach array, (file, iteration) =>
+            objectStore[file.filtered_filename] = [] unless objectStore.hasOwnProperty(file.filtered_filename)
+            objectStore[file.filtered_filename].push file
+
+            if iteration is arrayLength - 1
+              callback null, objectStore
+        (objectStore, callback) ->
+          possibleDupes = []
+          objectLength = _.size(objectStore)
+          count = 1
+          _.forEach objectStore, (fileCollection) =>
+            if fileCollection.length > 1
+              possibleDupes.push fileCollection
+            if count is objectLength - 1
+              callback null, possibleDupes
+            count++
+      ], (err, result) ->
+        callback result
+
     else
       console.log 'No files in database to check...'
       callback()
