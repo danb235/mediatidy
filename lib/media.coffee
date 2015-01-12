@@ -7,6 +7,7 @@ prompt = require 'prompt'
 Database = require './db'
 leven = require 'leven'
 _ = require 'lodash'
+ProgressBar = require 'progress'
 
 class Media extends Database
 
@@ -143,6 +144,10 @@ class Media extends Database
     matches = []
     arrayLength = array.length
 
+    bar = new ProgressBar("total: :total current: :current elasped :elapsed",
+      total: arrayLength
+    )
+
     if arrayLength > 0
       _.forEach array, (fileOutside, i) =>
         dupes = []
@@ -156,6 +161,8 @@ class Media extends Database
         if dupes.length > 0
           dupes.push fileOutside
           possibleDupes.push dupes
+
+        bar.tick()
         if i is arrayLength - 1
           callback possibleDupes
     else
@@ -168,7 +175,7 @@ class Media extends Database
     @dbBulkFileGetTag '\'HEALTHY\'', (files) =>
       @levenshtein files, (dupes) =>
         console.log dupes
-        
+
         # console.log files
         callback()
 
