@@ -153,8 +153,8 @@ class Media extends Database
         dupes = []
         arrayLength = array.length
         _.forEach array.slice(i + 1), (fileInside, j) =>
-          if _.indexOf(matches, fileInside) is -1
-            if leven(fileOutside.filtered_filename, fileInside.filtered_filename) is 0
+          if leven(fileOutside.filtered_filename, fileInside.filtered_filename) is 0
+            if _.indexOf(matches, fileInside) is -1
               matches.push fileInside
               dupes.push fileInside
 
