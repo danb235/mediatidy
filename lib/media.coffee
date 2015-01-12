@@ -5,7 +5,8 @@ async = require 'async'
 colors = require 'colors'
 prompt = require 'prompt'
 Database = require './db'
-levenshtein = require 'fast-levenshtein'
+leven = require 'leven'
+_ = require 'lodash'
 
 class Media extends Database
 
@@ -138,43 +139,27 @@ class Media extends Database
         callback()
 
   levenshtein: (array, callback) ->
-    console.log
     possibleDupes = []
+    matches = []
     arrayLength = array.length
 
-    ldiggity = (iteration) =>
-      dupe = []
-
-      # waterfall loop looking for duplicate matches based on filename
-      i = iteration + 1
-      while i < arrayLength
-        # levenshtein algorithm to find fuzzy matches
-        levenshtein.getAsync array[iteration].filtered_filename, array[i].filtered_filename, (err, distance) =>
-          # if a match occurs push to temp array
-          if distance is 0 and array[i].dupe is undefined
-            array[i].dupe = 1
-            dupe.push array[i]
-
-          # if we reached the last loop of loops callback!
-          if i is arrayLength - 1 and iteration is arrayLength - 2
-            process.stdout.write(".done\n")
-            callback(possibleDupes)
-
-          # if we reached the end of the while loop, push dupe array and
-          # continue to execute function
-          else if i is arrayLength - 1
-            if dupe.length > 0
-              array[iteration].dupe = 1
-              dupe.push array[iteration]
-              possibleDupes.push dupe
-            process.stdout.write(".")
-            ldiggity(iteration + 1)
-          i++
-
     if arrayLength > 0
-      ldiggity(0)
+      _.forEach array, (fileOutside, i) =>
+        dupes = []
+        arrayLength = array.length
+        _.forEach array.slice(i + 1), (fileInside, j) =>
+          if _.indexOf(matches, fileInside) is -1
+            if leven(fileOutside.filtered_filename, fileInside.filtered_filename) is 0
+              matches.push fileInside
+              dupes.push fileInside
+
+        if dupes.length > 0
+          dupes.push fileOutside
+          possibleDupes.push dupes
+        if i is arrayLength - 1
+          callback possibleDupes
     else
-      console.log 'No files in database to check...'
+      console.log 'No files in database to check for dupes...'
       callback()
 
   deleteDupes: (callback) ->
@@ -183,9 +168,7 @@ class Media extends Database
     @dbBulkFileGetTag '\'HEALTHY\'', (files) =>
       @levenshtein files, (dupes) =>
         console.log dupes
-
-
-
+        
         # console.log files
         callback()
 
