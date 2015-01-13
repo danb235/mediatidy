@@ -119,7 +119,7 @@ class Media extends Database
         if arrayLength is iteration + 1 and missingFiles.length > 0
           console.log missingFiles.length + ' out of ' + arrayLength + ' files removed from database...'
           callback missingFiles
-        if arrayLength is iteration + 1 and missingFiles.length is 0
+        else if arrayLength is iteration + 1 and missingFiles.length is 0
           console.log 'No files needed to be removed from database...'
           callback missingFiles
         else
@@ -296,7 +296,7 @@ class Media extends Database
     # gather information about media files
     probedFiles = []
     arrayLength = array.length
-    bar = new ProgressBar("probing files: Total: :total Current: :current Completion Time: :etas",
+    bar = new ProgressBar("Probing files: Total: :total Current: :current Completion Time: :etas",
       total: arrayLength
     )
 
