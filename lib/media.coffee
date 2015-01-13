@@ -43,6 +43,7 @@ class Media extends Database
 
           fs.exists basePath.path, (exists) =>
             if exists
+              console.log basePath.path, 'searching for files...'
               # get files for given path
               dir.paths basePath.path, (err, paths) =>
                 throw err if err
