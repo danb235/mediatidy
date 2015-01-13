@@ -24,6 +24,7 @@
     "lodash": "^2.4.1",
     "node-dir": "^0.1.6",
     "node-ffprobe": "^1.2.2",
+    "pretty-bytes": "^1.0.2",
     "prompt": "^0.2.14",
     "sqlite3": "^2.2.7"
   },

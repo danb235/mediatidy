@@ -6,6 +6,7 @@ colors = require 'colors'
 prompt = require 'prompt'
 Database = require './db'
 _ = require 'lodash'
+prettyBytes = require 'pretty-bytes'
 
 class Media extends Database
 
@@ -168,17 +169,70 @@ class Media extends Database
       console.log 'No files in database to check...'
       callback()
 
+  promptUserDupeDelete: (array, callback) ->
+
+    _.forEach array, (file, j) =>
+      if j is 0
+        console.log "KEEP:".green, file.path, "width:", file.width, "height:", file.height, "size:", prettyBytes(file.size)
+      else
+        console.log "DELETE(?):".yellow, file.path, "width:", file.width, "height:", file.height, "size:", prettyBytes(file.size)
+
+    prompt.message = "mediatidy".yellow
+    prompt.delimiter = ": ".green
+    prompt.properties =
+      yesno:
+        default: 'no'
+        message: 'Keep highest quality file; delete lower quality duplicates?'
+        required: true
+        warning: "Must respond yes or no"
+        validator: /y[es]*|n[o]?/
+
+    # Start the prompt
+    prompt.start()
+
+    # get the simple yes or no property
+    prompt.get ['yesno'], (err, result) =>
+      if result.yesno.match(/yes/i)
+
+        _.forEach array.slice(1), (file, j) =>
+          fs.unlink file.path, (err) =>
+            throw err if err
+            console.log "DELETED:".red, file.path
+
+          if array.slice(1).length is j + 1
+            @dbBulkFileDelete array.slice(1), ->
+              console.log 'files deleted and removed from database...'
+              callback()
+      else
+        console.log "No files deleted..."
+        callback()
+
+  dupeSort: (array, callback) ->
+    sortedDupes = []
+    _.forEach array, (dupes, i) =>
+
+      # sort files by size
+      dupes.sort (a, b) ->
+        (a.size) - (b.size)
+      dupes.reverse()
+      sortedDupes.push dupes
+
+      if array.length - 1 is i
+        callback sortedDupes
+
   deleteDupes: (callback) ->
     console.log '==> '.cyan.bold + 'delete duplicate lower quality video files'
-    # get all files with tag 'CORRUPT'
+    # get all files with tag 'HEALTHY'
     @dbBulkFileGetTag '\'HEALTHY\'', (files) =>
       @findDupes files, (dupes) =>
-        console.log dupes
-
-
-
-        # console.log files
-        callback()
+        @dupeSort dupes, (sortedDupes) =>
+          deleteDupes = (iteration) =>
+            @promptUserDupeDelete sortedDupes[iteration], ->
+              if sortedDupes.length is iteration + 1
+                callback()
+              else
+                deleteDupes(iteration + 1)
+          deleteDupes(0)
 
   deleteOthers: (callback) ->
     console.log '==> '.cyan.bold + 'delete files which are not video types'
@@ -258,11 +312,17 @@ class Media extends Database
         # otherwise continue
         else if probeData["streams"].length > 0
 
-          # filter file name for future matching
+          # remove file extension
           filteredFileName = probeData.filename.replace(/\.\w*$/, "")
+          
+          # remove white space
           filteredFileName = filteredFileName.replace(/\s/g, "")
+
+          # remove any non word character
           filteredFileName = filteredFileName.replace(/\W/g, "")
-          filteredFileName = filteredFileName.replace(/\d{4}.*$/g, "")
+
+          # filteredFileName = filteredFileName.replace(/\d{4}.*$/g, "")
+          # make all uppercase
           filteredFileName = filteredFileName.toUpperCase()
 
           # set filename and filtered file name
