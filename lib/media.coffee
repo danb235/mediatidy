@@ -296,7 +296,7 @@ class Media extends Database
     # gather information about media files
     probedFiles = []
     arrayLength = array.length
-    bar = new ProgressBar("probing files [:bar] :percent :etas",
+    bar = new ProgressBar("probing files: Total: :total Current: :current Completion Time: :etas",
       total: arrayLength
     )
 
