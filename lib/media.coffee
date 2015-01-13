@@ -7,6 +7,7 @@ prompt = require 'prompt'
 Database = require './db'
 _ = require 'lodash'
 prettyBytes = require 'pretty-bytes'
+ProgressBar = require 'progress'
 
 class Media extends Database
 
@@ -295,6 +296,9 @@ class Media extends Database
     # gather information about media files
     probedFiles = []
     arrayLength = array.length
+    bar = new ProgressBar("probing files [:bar] :percent :etas",
+      total: arrayLength
+    )
 
     singleFileProbe = (iteration) =>
       probe array[iteration].path, (err, probeData) =>
@@ -314,7 +318,7 @@ class Media extends Database
 
           # remove file extension
           filteredFileName = probeData.filename.replace(/\.\w*$/, "")
-          
+
           # remove white space
           filteredFileName = filteredFileName.replace(/\s/g, "")
 
@@ -342,17 +346,15 @@ class Media extends Database
 
                 # push object to array
                 probedFiles.push array[iteration]
+                bar.tick()
             streamCallback()
 
         if arrayLength is iteration + 1
-          process.stdout.write(".done\n")
           console.log probedFiles.length + ' out of ' + arrayLength + ' files probed...'
           callback probedFiles
         else
-          process.stdout.write('.')
           singleFileProbe(iteration + 1)
     if arrayLength > 0
-      process.stdout.write('.')
       singleFileProbe(0)
     else
       console.log 'No files in database needed to be probed...'

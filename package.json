@@ -25,6 +25,7 @@
     "node-dir": "^0.1.6",
     "node-ffprobe": "^1.2.2",
     "pretty-bytes": "^1.0.2",
+    "progress": "^1.1.8",
     "prompt": "^0.2.14",
     "sqlite3": "^2.2.7"
   },
