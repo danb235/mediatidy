@@ -229,25 +229,37 @@ class Media extends Database
       if array.length - 1 is i
         callback sortedDupes
 
+  filterFileNames: (array, callback) ->
+    filteredFiles = []
+    _.forEach array, (file, i) =>
+
+      @regexFilter file.filename, (filteredFileName) =>
+        file.filtered_filename = filteredFileName
+        filteredFiles.push file
+
+        if array.length - 1 is i
+          callback filteredFiles
+
   deleteDupes: (callback) ->
     console.log '==> '.cyan.bold + 'delete duplicate lower quality video files'
     # get all files with tag 'HEALTHY'
     @dbBulkFileGetTag '\'HEALTHY\'', (files) =>
-      @findDupes files, (dupes) =>
-        if dupes.length is 0
-          console.log 'No duplicates found that needed to be deleted...'
-          callback()
-        else
-          @dupeSort dupes, (sortedDupes) =>
+      @filterFileNames files, (filteredFiles) =>
+        @findDupes filteredFiles, (dupes) =>
+          if dupes.length is 0
+            console.log 'No duplicates found that needed to be deleted...'
+            callback()
+          else
+            @dupeSort dupes, (sortedDupes) =>
 
-            # Loop over sortedDupes asynchronously
-            deleteDupes = (iteration) =>
-              @promptUserDupeDelete sortedDupes[iteration], ->
-                if sortedDupes.length is iteration + 1
-                  callback()
-                else
-                  deleteDupes(iteration + 1)
-            deleteDupes(0)
+              # Loop over sortedDupes asynchronously
+              deleteDupes = (iteration) =>
+                @promptUserDupeDelete sortedDupes[iteration], ->
+                  if sortedDupes.length is iteration + 1
+                    callback()
+                  else
+                    deleteDupes(iteration + 1)
+              deleteDupes(0)
 
   deleteOthers: (callback) ->
     console.log '==> '.cyan.bold + 'delete files which are not video types'
@@ -329,22 +341,8 @@ class Media extends Database
         # otherwise continue
         else if probeData["streams"].length > 0
 
-          # remove file extension
-          filteredFileName = probeData.filename.replace(/\.\w*$/, "")
-
-          # remove white space
-          filteredFileName = filteredFileName.replace(/\s/g, "")
-
-          # remove any non word character
-          filteredFileName = filteredFileName.replace(/\W/g, "")
-
-          # filteredFileName = filteredFileName.replace(/\d{4}.*$/g, "")
-          # make all uppercase
-          filteredFileName = filteredFileName.toUpperCase()
-
           # set filename and filtered file name
           array[iteration].filename = probeData.filename
-          array[iteration].filtered_filename = filteredFileName
 
           # loop through video streams to find needed stream info
           async.eachSeries probeData["streams"], (stream, streamCallback) =>
@@ -360,7 +358,8 @@ class Media extends Database
                 # push object to array
                 probedFiles.push array[iteration]
                 bar.tick()
-            streamCallback()
+                streamCallback()
+            else streamCallback()
 
         if arrayLength is iteration + 1
           # newline after progress bar
@@ -435,6 +434,49 @@ class Media extends Database
     else
       console.log "No files needed to be deleted..."
       callback()
+
+  regexFilter: (filename, callback) ->
+    console.log filename
+    # remove file extension
+    filteredFileName = filename.replace(/\.\w*$/, "")
+    console.log filteredFileName
+
+    # remove white space
+    filteredFileName = filteredFileName.replace(/\s/g, "")
+    console.log filteredFileName
+
+    # remove any non word character
+    filteredFileName = filteredFileName.replace(/\W/g, "")
+    console.log filteredFileName
+
+    # if show is multi episode: "Show - s02e05-e08.mkv"
+    if filteredFileName.match(/s\d{1,2}e\d{1,2}.*e\d{1,2}/i)
+      seasonAndEpisode = filteredFileName.match(/s\d{1,2}e\d{1,2}.*e\d{1,2}/i)[0]
+      regex = new RegExp(seasonAndEpisode + ".*", "g")
+      filteredFileName = filteredFileName.replace(regex, seasonAndEpisode)
+
+      console.log 'multi-show', filteredFileName
+
+    # if show episode: "Show - s02e05.mkv"
+    else if filteredFileName.match(/s\d{1,2}e\d{1,2}/i)
+      seasonAndEpisode = filteredFileName.match(/s\d{1,2}e\d{1,2}/i)[0]
+      regex = new RegExp(seasonAndEpisode + ".*", "g")
+      filteredFileName = filteredFileName.replace(regex, seasonAndEpisode);
+      console.log 'show', filteredFileName
+
+    # if movie based on year in filename
+    else if filteredFileName.match(/\d{4}/i)
+      years = [1880..2040]
+      _.forEach years, (year) =>
+        if filteredFileName.indexOf(year) > -1
+          regex = new RegExp(year + ".*", "g")
+          filteredFileName = filteredFileName.replace(regex, year);
+
+    # filteredFileName = filteredFileName.replace(/\d{4}.*$/g, "")
+    # make all uppercase
+    filteredFileName = filteredFileName.toUpperCase()
+    console.log filteredFileName
+    callback filteredFileName
 
   setup: (callback) ->
     # setup the database

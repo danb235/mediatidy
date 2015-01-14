@@ -41,15 +41,15 @@ class Database
 
   dbBulkFileGetAll: (callback) ->
     db = new sqlite3.Database(@dbFile)
-    db.all "SELECT rowid AS id, path, tag, filename, filtered_filename, width,
-      height, size, duration FROM MEDIAFILES", (err, rows) ->
+    db.all "SELECT rowid AS id, path, tag, filename, width, height, size,
+      duration FROM MEDIAFILES", (err, rows) ->
       db.close ->
         callback rows
 
   dbBulkFileGetTag: (tag, callback) ->
     db = new sqlite3.Database(@dbFile)
-    db.all "SELECT rowid AS id, path, tag, filename, filtered_filename, width,
-      height, size, duration FROM MEDIAFILES WHERE tag=#{tag}", (err, rows) ->
+    db.all "SELECT rowid AS id, path, tag, filename, width, height, size,
+      duration FROM MEDIAFILES WHERE tag=#{tag}", (err, rows) ->
       db.close ->
         callback rows
 
@@ -58,14 +58,12 @@ class Database
 
     # prepare sql  statement
     stmt = db.prepare("UPDATE MEDIAFILES SET tag=?, filename=?,
-      filtered_filename=?, width=?, height=?, size=?,
-      duration=? WHERE path=?")
+      width=?, height=?, size=?, duration=? WHERE path=?")
     arrayLength = array.length
     i = 0
     while i < arrayLength
-      stmt.run array[i].tag, array[i].filename, array[i].filtered_filename,
-        array[i].width, array[i].height, array[i].size, array[i].duration,
-        array[i].path
+      stmt.run array[i].tag, array[i].filename, array[i].width, array[i].height,
+        array[i].size, array[i].duration, array[i].path
       i++
 
     # insert data into db
@@ -109,7 +107,7 @@ class Database
     async.series [
       (seriesCallback) ->
         db.run "CREATE TABLE IF NOT EXISTS MEDIAFILES (path TEXT UNIQUE, tag TEXT, filename TEXT,
-          filtered_filename TEXT, width INT, height INT, size INT, duration INT)", ->
+          width INT, height INT, size INT, duration INT)", ->
           seriesCallback()
       (seriesCallback) ->
         db.run "CREATE TABLE IF NOT EXISTS PATHS (path TEXT UNIQUE, tag TEXT)", ->
