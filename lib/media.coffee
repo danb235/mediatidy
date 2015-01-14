@@ -445,22 +445,22 @@ class Media extends Database
     # remove any non word character
     filteredFileName = filteredFileName.replace(/\W/g, "")
 
-    # place pt1/pt2/pt3 at beginning of string
+    # detect if file is a part and place in front of filter string
     if filteredFileName.match(/pt[1-9]|part[1-9]|cd[1-9]/i)
       stringNumber = [1..9]
       _.forEach stringNumber, (number) =>
-        regex = new RegExp(".*pt" + number, "g")
+        regex = new RegExp(".*pt" + number, "gi")
         filteredFileName = filteredFileName.replace(regex, "pt" + number + filteredFileName)
-        regex = new RegExp(".*part" + number, "g")
+        regex = new RegExp(".*part" + number, "gi")
         filteredFileName = filteredFileName.replace(regex, "pt" + number + filteredFileName)
-        regex = new RegExp(".*cd" + number, "g")
+        regex = new RegExp(".*cd" + number, "gi")
         filteredFileName = filteredFileName.replace(regex, "pt" + number + filteredFileName)
 
     # if show is multi episode: "Show - s02e05-e08.mkv"
     if filteredFileName.match(/s\d{1,2}e\d{1,3}.*e\d{1,2}/i)
       # remove all characters after s##e##
       seasonAndEpisode = filteredFileName.match(/s\d{1,2}e\d{1,3}.*e\d{1,2}/i)[0]
-      regex = new RegExp(seasonAndEpisode + ".*", "g")
+      regex = new RegExp(seasonAndEpisode + ".*", "gi")
       filteredFileName = filteredFileName.replace(regex, seasonAndEpisode)
 
       # replace single digits with leading 0 double digit
@@ -472,7 +472,7 @@ class Media extends Database
     else if filteredFileName.match(/s\d{1,2}e\d{1,3}/i)
       # remove all characters after s##e##
       seasonAndEpisode = filteredFileName.match(/s\d{1,2}e\d{1,3}/i)[0]
-      regex = new RegExp(seasonAndEpisode + ".*", "g")
+      regex = new RegExp(seasonAndEpisode + ".*", "gi")
       filteredFileName = filteredFileName.replace(regex, seasonAndEpisode)
 
       # replace single digits with leading 0 double digit
@@ -486,7 +486,7 @@ class Media extends Database
       _.forEach years, (year) =>
         # ensure that a character exists before the year (hence indexOf 0)
         if filteredFileName.indexOf(year) > 0
-          regex = new RegExp(year + ".*", "g")
+          regex = new RegExp(year + ".*", "gi")
           filteredFileName = filteredFileName.replace(regex, year);
 
     # make all uppercase
