@@ -113,8 +113,8 @@ class Config extends Database
     prompt.delimiter = ": ".green
     prompt.properties =
       path:
-        description: 'enter full path to media files (movies or tv shows)'
-        message: 'enter path to media files'
+        description: 'full path to media files (example: /Volumes/Movies)'
+        pattern: /^\/\w+/
         required: true
 
     prompt.start()

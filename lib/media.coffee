@@ -1,13 +1,13 @@
-dir = require 'node-dir'
-fs = require 'fs-extra'
-probe = require 'node-ffprobe'
-async = require 'async'
-colors = require 'colors'
-prompt = require 'prompt'
-Database = require './db'
-_ = require 'lodash'
+dir         = require 'node-dir'
+fs          = require 'fs-extra'
+probe       = require 'node-ffprobe'
+async       = require 'async'
+colors      = require 'colors'
+prompt      = require 'prompt'
+Database    = require './db'
 prettyBytes = require 'pretty-bytes'
 ProgressBar = require 'progress'
+_           = require 'lodash'
 
 class Media extends Database
 
@@ -36,7 +36,7 @@ class Media extends Database
     @dbBulkPathGet '\'MEDIA\'', (array) =>
       if array.length is 0
         console.log "No paths have been added to mediatidy. Add paths to your media files with",
-          "\"mediatidy config paths-update\"".red
+          "\"mediatidy paths-update\"".red
       else
         # get files asynchronously for each 'MEDIA' path
         async.eachSeries array, ((basePath, seriesCallback) =>
@@ -142,11 +142,10 @@ class Media extends Database
 
   findDupes: (array, callback) ->
     arrayLength = array.length
-
     if arrayLength > 0
-
       async.waterfall [
         (callback) ->
+          # collect dupes by adding them their filtered_filename as a key
           objectStore = {}
           _.forEach array, (file, iteration) =>
             objectStore[file.filtered_filename] = [] unless objectStore.hasOwnProperty(file.filtered_filename)
@@ -155,6 +154,7 @@ class Media extends Database
             if iteration is arrayLength - 1
               callback null, objectStore
         (objectStore, callback) ->
+          # go through each key and find detect duplicates and push to array
           possibleDupes = []
           objectLength = _.size(objectStore)
           count = 1
@@ -207,17 +207,16 @@ class Media extends Database
 
               if arrayLength is iteration + 1
                 @dbBulkFileDelete array.slice(1), ->
-                  console.log 'files deleted and removed from database...'
                   callback()
               else
                 fileDelete(iteration + 1)
         fileDelete(0)
 
       else
-        console.log "No files deleted..."
         callback()
 
   dupeSort: (array, callback) ->
+    # sort arrays
     sortedDupes = []
     _.forEach array, (dupes, i) =>
 
@@ -235,15 +234,20 @@ class Media extends Database
     # get all files with tag 'HEALTHY'
     @dbBulkFileGetTag '\'HEALTHY\'', (files) =>
       @findDupes files, (dupes) =>
-        @dupeSort dupes, (sortedDupes) =>
-          console.log sortedDupes
-          deleteDupes = (iteration) =>
-            @promptUserDupeDelete sortedDupes[iteration], ->
-              if sortedDupes.length is iteration + 1
-                callback()
-              else
-                deleteDupes(iteration + 1)
-          deleteDupes(0)
+        if dupes.length is 0
+          console.log 'No duplicates found that needed to be deleted...'
+          callback()
+        else
+          @dupeSort dupes, (sortedDupes) =>
+
+            # Loop over sortedDupes asynchronously
+            deleteDupes = (iteration) =>
+              @promptUserDupeDelete sortedDupes[iteration], ->
+                if sortedDupes.length is iteration + 1
+                  callback()
+                else
+                  deleteDupes(iteration + 1)
+            deleteDupes(0)
 
   deleteOthers: (callback) ->
     console.log '==> '.cyan.bold + 'delete files which are not video types'
@@ -297,7 +301,6 @@ class Media extends Database
         if probedFiles
           # update database with meta info
           @dbBulkFileUpdate probedFiles, ->
-            console.log 'finished adding probe data to mediatidy database'
             callback()
         else
           callback()
@@ -360,7 +363,8 @@ class Media extends Database
             streamCallback()
 
         if arrayLength is iteration + 1
-          console.log probedFiles.length + ' out of ' + arrayLength + ' files probed...'
+          # newline after progress bar
+          process.stdout.write "\n"
           callback probedFiles
         else
           singleFileProbe(iteration + 1)
