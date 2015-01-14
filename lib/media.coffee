@@ -436,33 +436,38 @@ class Media extends Database
       callback()
 
   regexFilter: (filename, callback) ->
-    console.log filename
     # remove file extension
     filteredFileName = filename.replace(/\.\w*$/, "")
-    console.log filteredFileName
 
     # remove white space
     filteredFileName = filteredFileName.replace(/\s/g, "")
-    console.log filteredFileName
 
     # remove any non word character
     filteredFileName = filteredFileName.replace(/\W/g, "")
-    console.log filteredFileName
 
     # if show is multi episode: "Show - s02e05-e08.mkv"
     if filteredFileName.match(/s\d{1,2}e\d{1,2}.*e\d{1,2}/i)
+      # remove all characters after s##e##
       seasonAndEpisode = filteredFileName.match(/s\d{1,2}e\d{1,2}.*e\d{1,2}/i)[0]
       regex = new RegExp(seasonAndEpisode + ".*", "g")
       filteredFileName = filteredFileName.replace(regex, seasonAndEpisode)
 
-      console.log 'multi-show', filteredFileName
+      # replace single digits with leading 0 double digit
+      filteredFileName = filteredFileName.replace(/[^0-9][0-9](?![0-9]+)/g, (c) ->
+        c.charAt(0) + "0" + c.charAt(1)
+      )
 
     # if show episode: "Show - s02e05.mkv"
     else if filteredFileName.match(/s\d{1,2}e\d{1,2}/i)
+      # remove all characters after s##e##
       seasonAndEpisode = filteredFileName.match(/s\d{1,2}e\d{1,2}/i)[0]
       regex = new RegExp(seasonAndEpisode + ".*", "g")
-      filteredFileName = filteredFileName.replace(regex, seasonAndEpisode);
-      console.log 'show', filteredFileName
+      filteredFileName = filteredFileName.replace(regex, seasonAndEpisode)
+
+      # replace single digits with leading 0 double digit
+      filteredFileName = filteredFileName.replace(/[^0-9][0-9](?![0-9]+)/g, (c) ->
+        c.charAt(0) + "0" + c.charAt(1)
+      )
 
     # if movie based on year in filename
     else if filteredFileName.match(/\d{4}/i)
@@ -472,10 +477,8 @@ class Media extends Database
           regex = new RegExp(year + ".*", "g")
           filteredFileName = filteredFileName.replace(regex, year);
 
-    # filteredFileName = filteredFileName.replace(/\d{4}.*$/g, "")
     # make all uppercase
     filteredFileName = filteredFileName.toUpperCase()
-    console.log filteredFileName
     callback filteredFileName
 
   setup: (callback) ->
