@@ -11,11 +11,10 @@ Point **mediatidy** at your movie or TV show directory and it will do the follow
 * Delete all non-video type files
 * Delete all corrupt/incomplete video files
 * Delete all sample files
+* Process files to find dupes; keep the highest quality of the dupes and delete the rest
 
 Coming soon:
 * Delete files under a specified size
-* Process files to find dupes; keep the highest resolution of the dupes and delete the rest
-* Process files to find dupes; keep the largest sized file of the dupes (if they are the same resolution) and delete the rest
 * Delete empty directories
 
 <!-- ## Current Assumptions
@@ -44,13 +43,13 @@ sudo npm install -g mediatidy
 Add media folder to **mediatidy** you would like to process with:
 
 ```
-mediatidy config paths-update
+mediatidy paths-update
 ```
 
 Let's tidy up those media directories!
 
 ```
-mediatidy media update
+mediatidy update
 ```
 
 As always options etc. can be brought up with:

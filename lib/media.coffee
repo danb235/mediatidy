@@ -1,10 +1,13 @@
-dir = require 'node-dir'
-fs = require 'fs-extra'
-probe = require 'node-ffprobe'
-async = require 'async'
-colors = require 'colors'
-prompt = require 'prompt'
-Database = require './db'
+dir         = require 'node-dir'
+fs          = require 'fs-extra'
+probe       = require 'node-ffprobe'
+async       = require 'async'
+colors      = require 'colors'
+prompt      = require 'prompt'
+Database    = require './db'
+prettyBytes = require 'pretty-bytes'
+ProgressBar = require 'progress'
+_           = require 'lodash'
 
 class Media extends Database
 
@@ -33,13 +36,14 @@ class Media extends Database
     @dbBulkPathGet '\'MEDIA\'', (array) =>
       if array.length is 0
         console.log "No paths have been added to mediatidy. Add paths to your media files with",
-          "\"mediatidy config paths-update\"".red
+          "\"mediatidy paths-update\"".red
       else
         # get files asynchronously for each 'MEDIA' path
         async.eachSeries array, ((basePath, seriesCallback) =>
 
           fs.exists basePath.path, (exists) =>
             if exists
+              console.log basePath.path + ':', 'searching for files...'
               # get files for given path
               dir.paths basePath.path, (err, paths) =>
                 throw err if err
@@ -116,7 +120,7 @@ class Media extends Database
         if arrayLength is iteration + 1 and missingFiles.length > 0
           console.log missingFiles.length + ' out of ' + arrayLength + ' files removed from database...'
           callback missingFiles
-        if arrayLength is iteration + 1 and missingFiles.length is 0
+        else if arrayLength is iteration + 1 and missingFiles.length is 0
           console.log 'No files needed to be removed from database...'
           callback missingFiles
         else
@@ -135,6 +139,115 @@ class Media extends Database
       promptMessage = "Delete all video files which are considered corrupt files?"
       @promptUserBulkDelete files, promptMessage, ->
         callback()
+
+  findDupes: (array, callback) ->
+    arrayLength = array.length
+    if arrayLength > 0
+      async.waterfall [
+        (callback) ->
+          # collect dupes by adding them their filtered_filename as a key
+          objectStore = {}
+          _.forEach array, (file, iteration) =>
+            objectStore[file.filtered_filename] = [] unless objectStore.hasOwnProperty(file.filtered_filename)
+            objectStore[file.filtered_filename].push file
+
+            if iteration is arrayLength - 1
+              callback null, objectStore
+        (objectStore, callback) ->
+          # go through each key and find detect duplicates and push to array
+          possibleDupes = []
+          objectLength = _.size(objectStore)
+          count = 1
+          _.forEach objectStore, (fileCollection) =>
+            if fileCollection.length > 1
+              possibleDupes.push fileCollection
+            if count is objectLength - 1
+              callback null, possibleDupes
+            count++
+      ], (err, result) ->
+        callback result
+
+    else
+      console.log 'No files in database to check...'
+      callback()
+
+  promptUserDupeDelete: (array, callback) ->
+    arrayLength = array.length
+
+    _.forEach array, (file, j) =>
+      if j is 0
+        console.log "KEEP:".green, file.path, "width:", file.width, "height:", file.height, "size:", prettyBytes(file.size)
+      else
+        console.log "DELETE(?):".yellow, file.path, "width:", file.width, "height:", file.height, "size:", prettyBytes(file.size)
+
+    prompt.message = "mediatidy".yellow
+    prompt.delimiter = ": ".green
+    prompt.properties =
+      yesno:
+        default: 'no'
+        message: 'Keep highest quality file; delete lower quality duplicates?'
+        required: true
+        warning: "Must respond yes or no"
+        validator: /y[es]*|n[o]?/
+
+    # Start the prompt
+    prompt.start()
+
+    # get the simple yes or no property
+    prompt.get ['yesno'], (err, result) =>
+      if result.yesno.match(/yes/i)
+
+        fileDelete = (iteration) =>
+          if iteration is 0
+            fileDelete(iteration + 1)
+          else
+            fs.unlink array[iteration].path, (err) =>
+              throw err if err
+              console.log "DELETED:".red, array[iteration].path
+
+              if arrayLength is iteration + 1
+                @dbBulkFileDelete array.slice(1), ->
+                  callback()
+              else
+                fileDelete(iteration + 1)
+        fileDelete(0)
+
+      else
+        callback()
+
+  dupeSort: (array, callback) ->
+    # sort arrays
+    sortedDupes = []
+    _.forEach array, (dupes, i) =>
+
+      # sort files by size
+      dupes.sort (a, b) ->
+        (a.size) - (b.size)
+      dupes.reverse()
+      sortedDupes.push dupes
+
+      if array.length - 1 is i
+        callback sortedDupes
+
+  deleteDupes: (callback) ->
+    console.log '==> '.cyan.bold + 'delete duplicate lower quality video files'
+    # get all files with tag 'HEALTHY'
+    @dbBulkFileGetTag '\'HEALTHY\'', (files) =>
+      @findDupes files, (dupes) =>
+        if dupes.length is 0
+          console.log 'No duplicates found that needed to be deleted...'
+          callback()
+        else
+          @dupeSort dupes, (sortedDupes) =>
+
+            # Loop over sortedDupes asynchronously
+            deleteDupes = (iteration) =>
+              @promptUserDupeDelete sortedDupes[iteration], ->
+                if sortedDupes.length is iteration + 1
+                  callback()
+                else
+                  deleteDupes(iteration + 1)
+            deleteDupes(0)
 
   deleteOthers: (callback) ->
     console.log '==> '.cyan.bold + 'delete files which are not video types'
@@ -188,7 +301,6 @@ class Media extends Database
         if probedFiles
           # update database with meta info
           @dbBulkFileUpdate probedFiles, ->
-            console.log 'finished adding probe data to mediatidy database'
             callback()
         else
           callback()
@@ -197,6 +309,9 @@ class Media extends Database
     # gather information about media files
     probedFiles = []
     arrayLength = array.length
+    bar = new ProgressBar("Probing files: :current of :total :percent [:elapseds elapsed, eta :etas]",
+      total: arrayLength
+    )
 
     singleFileProbe = (iteration) =>
       probe array[iteration].path, (err, probeData) =>
@@ -214,11 +329,17 @@ class Media extends Database
         # otherwise continue
         else if probeData["streams"].length > 0
 
-          # filter file name for future matching
+          # remove file extension
           filteredFileName = probeData.filename.replace(/\.\w*$/, "")
+
+          # remove white space
           filteredFileName = filteredFileName.replace(/\s/g, "")
+
+          # remove any non word character
           filteredFileName = filteredFileName.replace(/\W/g, "")
-          filteredFileName = filteredFileName.replace(/\d{4}.*$/g, "")
+
+          # filteredFileName = filteredFileName.replace(/\d{4}.*$/g, "")
+          # make all uppercase
           filteredFileName = filteredFileName.toUpperCase()
 
           # set filename and filtered file name
@@ -238,17 +359,16 @@ class Media extends Database
 
                 # push object to array
                 probedFiles.push array[iteration]
+                bar.tick()
             streamCallback()
 
         if arrayLength is iteration + 1
-          process.stdout.write(".done\n")
-          console.log probedFiles.length + ' out of ' + arrayLength + ' files probed...'
+          # newline after progress bar
+          process.stdout.write "\n"
           callback probedFiles
         else
-          process.stdout.write('.')
           singleFileProbe(iteration + 1)
     if arrayLength > 0
-      process.stdout.write('.')
       singleFileProbe(0)
     else
       console.log 'No files in database needed to be probed...'

@@ -1,13 +1,99 @@
 #!/usr/bin/env coffee
 
-program = require 'commander'
 pkg = require '../package.json'
-path = require 'path'
+program = require 'commander'
+Config = require '../lib/config'
+Media = require '../lib/media'
+colors = require 'colors'
+async = require 'async'
+
+program.version(pkg.version)
+
+program.command('update')
+  .description('look for for files and directories and add to mediatidy database')
+  .action () ->
+    media = new Media
+
+    # Perform action in series with async
+    async.series [
+      (callback) ->
+        media.setup ->
+          callback()
+      (callback) ->
+        media.addFiles ->
+          callback()
+      (callback) ->
+        media.exists ->
+          callback()
+      (callback) ->
+        media.fileMetaUpdate ->
+          callback()
+      (callback) ->
+        media.deleteCorrupt ->
+          callback()
+      (callback) ->
+        media.deleteSamples ->
+          callback()
+      (callback) ->
+        media.deleteOthers ->
+          callback()
+      (callback) ->
+        media.deleteDupes ->
+          callback()
+    ], (err, results) ->
+      throw err if err
+      console.log 'Media update complete.'
 
 program
-  .version(pkg.version)
-  .command('media <action>', 'perform media file <action> such as tidy')
-  .command('config <action>', 'perform config <action> such as paths-update')
+  .command('paths-update')
+  .description('update paths to media files for mediatidy to tidy up!')
+  .action () ->
+    config = new Config
+
+    async.series [
+      (seriesCallback) ->
+        config.setup ->
+          seriesCallback()
+      (seriesCallback) ->
+        config.pathPrompt ->
+          seriesCallback()
+    ], (err, results) ->
+      throw err if err
+      console.log 'path update complete.'
+
+program
+  .command('paths-clear')
+  .description('clear paths to media files for mediatidy')
+  .action () ->
+    config = new Config
+
+    async.series [
+      (seriesCallback) ->
+        config.setup ->
+          seriesCallback()
+      (seriesCallback) ->
+        config.pathsDelete ->
+          seriesCallback()
+    ], (err, results) ->
+      throw err if err
+      console.log 'path clear complete.'
+
+program
+  .command('files-clear')
+  .description('purge all media files from the database')
+  .action () ->
+    config = new Config
+
+    async.series [
+      (seriesCallback) ->
+        config.setup ->
+          seriesCallback()
+      (seriesCallback) ->
+        config.filesDelete ->
+          seriesCallback()
+    ], (err, results) ->
+      throw err if err
+      console.log 'files clear complete.'
 
 program.parse(process.argv)
 
