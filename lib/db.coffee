@@ -79,6 +79,12 @@ class Database
       db.close ->
         callback rows
 
+  dbFileTableDeleteAll: (callback) ->
+    db = new sqlite3.Database('data.db')
+    db.run "DELETE FROM MEDIAFILES", ->
+      db.close ->
+        callback()
+
   dbPathAdd: (path, tag, callback) ->
     db = new sqlite3.Database(@dbFile)
 

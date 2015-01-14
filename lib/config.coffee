@@ -26,7 +26,7 @@ class Config extends Database
       # get the simple yes or no property
       prompt.get ['yesno'], (err, result) =>
         if result.yesno.match(/yes/i)
-          @dbBulkFileDelete =>
+          @dbFileTableDeleteAll =>
             console.log "All files removed from mediatidy..."
             callback()
         else

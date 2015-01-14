@@ -172,6 +172,7 @@ class Media extends Database
       callback()
 
   promptUserDupeDelete: (array, callback) ->
+    arrayLength = array.length
 
     _.forEach array, (file, j) =>
       if j is 0
@@ -196,15 +197,22 @@ class Media extends Database
     prompt.get ['yesno'], (err, result) =>
       if result.yesno.match(/yes/i)
 
-        _.forEach array.slice(1), (file, j) =>
-          fs.unlink file.path, (err) =>
-            throw err if err
-            console.log "DELETED:".red, file.path
+        fileDelete = (iteration) =>
+          if iteration is 0
+            fileDelete(iteration + 1)
+          else
+            fs.unlink array[iteration].path, (err) =>
+              throw err if err
+              console.log "DELETED:".red, array[iteration].path
 
-          if array.slice(1).length is j + 1
-            @dbBulkFileDelete array.slice(1), ->
-              console.log 'files deleted and removed from database...'
-              callback()
+              if arrayLength is iteration + 1
+                @dbBulkFileDelete array.slice(1), ->
+                  console.log 'files deleted and removed from database...'
+                  callback()
+              else
+                fileDelete(iteration + 1)
+        fileDelete(0)
+
       else
         console.log "No files deleted..."
         callback()
@@ -228,6 +236,7 @@ class Media extends Database
     @dbBulkFileGetTag '\'HEALTHY\'', (files) =>
       @findDupes files, (dupes) =>
         @dupeSort dupes, (sortedDupes) =>
+          console.log sortedDupes
           deleteDupes = (iteration) =>
             @promptUserDupeDelete sortedDupes[iteration], ->
               if sortedDupes.length is iteration + 1
