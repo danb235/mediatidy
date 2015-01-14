@@ -161,7 +161,7 @@ class Media extends Database
           _.forEach objectStore, (fileCollection) =>
             if fileCollection.length > 1
               possibleDupes.push fileCollection
-            if count is objectLength - 1
+            if count is objectLength
               callback null, possibleDupes
             count++
       ], (err, result) ->
@@ -445,24 +445,16 @@ class Media extends Database
     # remove any non word character
     filteredFileName = filteredFileName.replace(/\W/g, "")
 
-    # place pt1/pt2/pt3 at begginning of string
-    if filteredFileName.match(/pt[1-4]|part[1-4]/i)
-      regex = new RegExp(".*pt1", "gi")
-      filteredFileName = filteredFileName.replace(regex, "pt1" + filteredFileName)
-      regex = new RegExp(".*pt2", "gi")
-      filteredFileName = filteredFileName.replace(regex, "pt2" + filteredFileName)
-      regex = new RegExp(".*pt3", "gi")
-      filteredFileName = filteredFileName.replace(regex, "pt3" + filteredFileName)
-      regex = new RegExp(".*pt4", "gi")
-      filteredFileName = filteredFileName.replace(regex, "pt4" + filteredFileName)
-      regex = new RegExp(".*part1", "gi")
-      filteredFileName = filteredFileName.replace(regex, "pt1" + filteredFileName)
-      regex = new RegExp(".*part2", "gi")
-      filteredFileName = filteredFileName.replace(regex, "pt2" + filteredFileName)
-      regex = new RegExp(".*part3", "gi")
-      filteredFileName = filteredFileName.replace(regex, "pt3" + filteredFileName)
-      regex = new RegExp(".*part4", "gi")
-      filteredFileName = filteredFileName.replace(regex, "pt4" + filteredFileName)
+    # place pt1/pt2/pt3 at beginning of string
+    if filteredFileName.match(/pt[1-9]|part[1-9]|cd[1-9]/i)
+      stringNumber = [1..9]
+      _.forEach stringNumber, (number) =>
+        regex = new RegExp(".*pt" + number, "g")
+        filteredFileName = filteredFileName.replace(regex, "pt" + number + filteredFileName)
+        regex = new RegExp(".*part" + number, "g")
+        filteredFileName = filteredFileName.replace(regex, "pt" + number + filteredFileName)
+        regex = new RegExp(".*cd" + number, "g")
+        filteredFileName = filteredFileName.replace(regex, "pt" + number + filteredFileName)
 
     # if show is multi episode: "Show - s02e05-e08.mkv"
     if filteredFileName.match(/s\d{1,2}e\d{1,3}.*e\d{1,2}/i)
