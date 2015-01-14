@@ -446,15 +446,15 @@ class Media extends Database
     filteredFileName = filteredFileName.replace(/\W/g, "")
 
     # detect if file is a part and place in front of filter string
-    if filteredFileName.match(/pt[1-9]|part[1-9]|cd[1-9]/i)
+    if filteredFileName.match(/pt[1-9]|part[1-9]|cd[1-9]/gi)
       stringNumber = [1..9]
       _.forEach stringNumber, (number) =>
         regex = new RegExp(".*pt" + number, "gi")
-        filteredFileName = filteredFileName.replace(regex, "pt" + number + filteredFileName)
+        filteredFileName = filteredFileName.replace(regex, "pt" + number + "_" + filteredFileName)
         regex = new RegExp(".*part" + number, "gi")
-        filteredFileName = filteredFileName.replace(regex, "pt" + number + filteredFileName)
+        filteredFileName = filteredFileName.replace(regex, "pt" + number + "_" + filteredFileName)
         regex = new RegExp(".*cd" + number, "gi")
-        filteredFileName = filteredFileName.replace(regex, "pt" + number + filteredFileName)
+        filteredFileName = filteredFileName.replace(regex, "pt" + number + "_" + filteredFileName)
 
     # if show is multi episode: "Show - s02e05-e08.mkv"
     if filteredFileName.match(/s\d{1,2}e\d{1,3}.*e\d{1,2}/i)
@@ -479,6 +479,12 @@ class Media extends Database
       filteredFileName = filteredFileName.replace(/[^0-9][0-9](?![0-9]+)/g, (c) ->
         c.charAt(0) + "0" + c.charAt(1)
       )
+
+    # if show has date: "Show.2014.04.10.mkv"
+    else if filteredFileName.match(/[1880-2040]{4}\d{4}|\d{4}[1880-2040]{4}/g)
+      seasonAndEpisode = filteredFileName.match(/[1880-2040]{4}\d{4}|\d{4}[1880-2040]{4}/g)[0]
+      regex = new RegExp(seasonAndEpisode + ".*", "gi")
+      filteredFileName = filteredFileName.replace(regex, seasonAndEpisode)
 
     # if movie based on year in filename
     else if filteredFileName.match(/\d{4}/i)
