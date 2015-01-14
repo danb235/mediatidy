@@ -445,10 +445,29 @@ class Media extends Database
     # remove any non word character
     filteredFileName = filteredFileName.replace(/\W/g, "")
 
+    # place pt1/pt2/pt3 at begginning of string
+    if filteredFileName.match(/pt[1-4]|part[1-4]/i)
+      regex = new RegExp(".*pt1", "gi")
+      filteredFileName = filteredFileName.replace(regex, "pt1" + filteredFileName)
+      regex = new RegExp(".*pt2", "gi")
+      filteredFileName = filteredFileName.replace(regex, "pt2" + filteredFileName)
+      regex = new RegExp(".*pt3", "gi")
+      filteredFileName = filteredFileName.replace(regex, "pt3" + filteredFileName)
+      regex = new RegExp(".*pt4", "gi")
+      filteredFileName = filteredFileName.replace(regex, "pt4" + filteredFileName)
+      regex = new RegExp(".*part1", "gi")
+      filteredFileName = filteredFileName.replace(regex, "pt1" + filteredFileName)
+      regex = new RegExp(".*part2", "gi")
+      filteredFileName = filteredFileName.replace(regex, "pt2" + filteredFileName)
+      regex = new RegExp(".*part3", "gi")
+      filteredFileName = filteredFileName.replace(regex, "pt3" + filteredFileName)
+      regex = new RegExp(".*part4", "gi")
+      filteredFileName = filteredFileName.replace(regex, "pt4" + filteredFileName)
+
     # if show is multi episode: "Show - s02e05-e08.mkv"
-    if filteredFileName.match(/s\d{1,2}e\d{1,2}.*e\d{1,2}/i)
+    if filteredFileName.match(/s\d{1,2}e\d{1,3}.*e\d{1,2}/i)
       # remove all characters after s##e##
-      seasonAndEpisode = filteredFileName.match(/s\d{1,2}e\d{1,2}.*e\d{1,2}/i)[0]
+      seasonAndEpisode = filteredFileName.match(/s\d{1,2}e\d{1,3}.*e\d{1,2}/i)[0]
       regex = new RegExp(seasonAndEpisode + ".*", "g")
       filteredFileName = filteredFileName.replace(regex, seasonAndEpisode)
 
@@ -458,9 +477,9 @@ class Media extends Database
       )
 
     # if show episode: "Show - s02e05.mkv"
-    else if filteredFileName.match(/s\d{1,2}e\d{1,2}/i)
+    else if filteredFileName.match(/s\d{1,2}e\d{1,3}/i)
       # remove all characters after s##e##
-      seasonAndEpisode = filteredFileName.match(/s\d{1,2}e\d{1,2}/i)[0]
+      seasonAndEpisode = filteredFileName.match(/s\d{1,2}e\d{1,3}/i)[0]
       regex = new RegExp(seasonAndEpisode + ".*", "g")
       filteredFileName = filteredFileName.replace(regex, seasonAndEpisode)
 
@@ -473,12 +492,14 @@ class Media extends Database
     else if filteredFileName.match(/\d{4}/i)
       years = [1880..2040]
       _.forEach years, (year) =>
-        if filteredFileName.indexOf(year) > -1
+        # ensure that a character exists before the year (hence indexOf 0)
+        if filteredFileName.indexOf(year) > 0
           regex = new RegExp(year + ".*", "g")
           filteredFileName = filteredFileName.replace(regex, year);
 
     # make all uppercase
     filteredFileName = filteredFileName.toUpperCase()
+    console.log 'filtered:', filteredFileName
     callback filteredFileName
 
   setup: (callback) ->
