@@ -2,8 +2,9 @@
   "preferGlobal": true,
   "main": "index",
   "name": "mediatidy",
-  "description": "Keep your media nice and tidy!",
-  "version": "0.2.0",
+  "description": "A simple CLI tool to keep your media nice and tidy!",
+  "version": "0.2.1",
+  "author": "Daniel Bohannon <tkdan235@gmail.com>",
   "repository": {
     "type": "git",
     "url": "git@github.com:tkdan235/mediatidy.git"
@@ -15,6 +16,13 @@
     "bin": "bin",
     "lib": "lib"
   },
+  "keywords": [
+    "cli",
+    "tidy",
+    "organize",
+    "tv shows",
+    "movies"
+  ],
   "dependencies": {
     "async": "^0.9.0",
     "coffee-script": "^1.8.0",
