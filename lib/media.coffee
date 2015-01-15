@@ -497,7 +497,7 @@ class Media extends Database
 
     # make all uppercase
     filteredFileName = filteredFileName.toUpperCase()
-    console.log 'filtered:', filteredFileName
+    # console.log 'filtered:', filteredFileName
     callback filteredFileName
 
   setup: (callback) ->
