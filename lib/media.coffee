@@ -201,8 +201,12 @@ class Media extends Database
           if iteration is 0
             fileDelete(iteration + 1)
           else
-            fs.unlink array[iteration].path, (err) =>
-              throw err if err
+            fs.unlink array[iteration].path, =>
+
+            # oddly throws errors when successful; fixme
+            # fs.unlink array[iteration].path, (err) =>
+            #   throw err if err
+
               console.log "DELETED:".red, array[iteration].path
 
               if arrayLength is iteration + 1
@@ -416,8 +420,12 @@ class Media extends Database
         if result.yesno.match(/yes/i)
 
           fileDelete = (iteration) =>
-            fs.unlink array[iteration].path, (err) =>
-              throw err if err
+            fs.unlink array[iteration].path, =>
+
+            # oddly throws errors when successful; fixme
+            # fs.unlink array[iteration].path, (err) =>
+            #   throw err if err
+
               console.log "DELETED:".red, array[iteration].path
 
               if arrayLength is iteration + 1
