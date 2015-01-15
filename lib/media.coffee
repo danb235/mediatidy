@@ -176,9 +176,9 @@ class Media extends Database
 
     _.forEach array, (file, j) =>
       if j is 0
-        console.log "KEEP:".green, file.path, "width:", file.width, "height:", file.height, "size:", prettyBytes(file.size)
+        console.log "KEEP:     ".green, file.path, "resolution:", file.width+"x"+file.height, "size:", prettyBytes(file.size)
       else
-        console.log "DELETE(?):".yellow, file.path, "width:", file.width, "height:", file.height, "size:", prettyBytes(file.size)
+        console.log "DELETE(?):".yellow, file.path, "resolution:", file.width+"x"+file.height, "size:", prettyBytes(file.size)
 
     prompt.message = "mediatidy".yellow
     prompt.delimiter = ": ".green
