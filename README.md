@@ -8,23 +8,25 @@ This project is early in dev and a WIP. Please file issues!
 ## About
 
 Point **mediatidy** at your movie or TV show directory and it will do the following (any file deletion requires your approval):
-* Delete all non-video type files
-* Delete all corrupt/incomplete video files
-* Delete all sample files
-* Process files to find dupes; keep the highest quality of the dupes and delete the rest
+* Delete all non-video type files.
+* Delete all corrupt/incomplete video files.
+* Delete all sample files.
+* Process files to find dupes; keep the highest quality of the dupes and delete the rest.
 
 Coming soon:
-* Delete files under a specified size
-* Directory tidy
+* Delete files under a specified size.
+* Tidy up your media directories.
+* Media files view.
+* Ability to rename files.
 
 <!-- ## Current Assumptions
 
 * Your movie files follow a similar naming pattern (such as `Young Frankenstein (1974).mkv`) -->
 
-## Environment Setup (OSX)
+## Setup
 ### Dependencies
 
-[NodeJS](http://nodejs.org/) and [ffmpeg](https://www.ffmpeg.org/) are required to run mediatidy. Find the installers and install the latest versions; or install [homebrew](http://brew.sh/) and easily install what you need with the following:  
+[NodeJS](http://nodejs.org/) and [ffmpeg](https://www.ffmpeg.org/) are required to run mediatidy. Find the installers and install the latest versions; If using Mac OSX consider installing [homebrew](http://brew.sh/) and easily install what you need with the following:  
 
 
 ```
