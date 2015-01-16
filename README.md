@@ -1,7 +1,7 @@
 # mediatidy
 
 For anyone with a large media collection (movies and tv shows) who craves file organization,
-**mediatidy** is a nodejs project that helps you keep your content... tidy.
+**mediatidy** is a project that helps you keep your content... tidy.
 
 This project is early in dev and a WIP. Please file issues!
 
@@ -15,7 +15,7 @@ Point **mediatidy** at your movie or TV show directory and it will do the follow
 
 Coming soon:
 * Delete files under a specified size
-* Delete empty directories
+* Directory tidy
 
 <!-- ## Current Assumptions
 
@@ -27,33 +27,42 @@ If starting from scratch, it is easiest to install the Apple Command Line Tools.
 
 Install Node and NPM on OSX (tested on 10.10). [NodeJS](http://nodejs.org/) is the scripting language used for these tools and must be installed on your system.  We also need [ffmpeg](https://www.ffmpeg.org/) for file metadata probing.  The quickest way to do this is via [brew](http://brew.sh/).  To install [brew](http://brew.sh/), then [NodeJS](http://nodejs.org/), and lastly [ffmpeg](https://www.ffmpeg.org/) run the following on the command line:
 ```
-ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
-brew install node
-brew install ffmpeg
-sudo npm install -g coffee-script
+$ ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+$ brew install node
+$ brew install ffmpeg
+$ sudo npm install -g coffee-script
 ```
 
 ### Install
 
 ```
-sudo npm install -g mediatidy
+$ sudo npm install -g mediatidy
+```
+
+### Uninstall
+
+```
+$ sudo npm uninstall -g mediatidy
+$ rm -rf ~/.mediatidy
 ```
 
 ## Usage
+See **mediatidy** help for a full list of commands.
+
+```
+$ mediatidy --help
+```
+
+### Basics
+
 Add media folder to **mediatidy** you would like to process with:
 
 ```
-mediatidy paths-update
+$ mediatidy paths add
 ```
 
-Let's tidy up those media directories!
+Let's tidy up those media files!
 
 ```
-mediatidy update
-```
-
-As always options etc. can be brought up with:
-
-```
-mediatidy --help
+$ mediatidy clean files
 ```
