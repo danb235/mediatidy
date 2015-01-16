@@ -26,7 +26,7 @@ Coming soon:
 ## Setup
 ### Dependencies
 
-[NodeJS](http://nodejs.org/) and [ffmpeg](https://www.ffmpeg.org/) are required to run mediatidy. Find the installers and install the latest versions; If using Mac OSX consider installing [homebrew](http://brew.sh/) and easily install what you need with the following:  
+[NodeJS](http://nodejs.org/) and [ffmpeg](https://www.ffmpeg.org/) are required to run mediatidy. Find the installers and install the latest versions; if using Mac OSX consider installing [homebrew](http://brew.sh/) and easily install what you need with the following:  
 
 
 ```
