@@ -23,19 +23,21 @@ Coming soon:
 
 ## Environment Setup (OSX)
 ### Dependencies
-If starting from scratch, it is easiest to install the Apple Command Line Tools.  Download the binary for your version of OSX here: [Apple Developer Downloads](https://developer.apple.com/downloads/)
 
-Install Node and NPM on OSX (tested on 10.10). [NodeJS](http://nodejs.org/) is the scripting language used for these tools and must be installed on your system.  We also need [ffmpeg](https://www.ffmpeg.org/) for file metadata probing.  The quickest way to do this is via [brew](http://brew.sh/).  To install [brew](http://brew.sh/), then [NodeJS](http://nodejs.org/), and lastly [ffmpeg](https://www.ffmpeg.org/) run the following on the command line:
+[NodeJS](http://nodejs.org/) and [ffmpeg](https://www.ffmpeg.org/) are required to run mediatidy. Find the installers and install the latest versions; or install [homebrew](http://brew.sh/) and easily install what you need with the following:  
+
+
 ```
-$ ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 $ brew install node
 $ brew install ffmpeg
-$ sudo npm install -g coffee-script
 ```
 
 ### Install
 
+Be sure all [dependencies](#Dependencies) are install before installing **mediatidy**.
+
 ```
+$ sudo npm install -g coffee-script
 $ sudo npm install -g mediatidy
 ```
 
