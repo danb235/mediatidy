@@ -9,8 +9,8 @@ async = require 'async'
 
 program.version(pkg.version)
 
-program.command('update')
-  .description('look for for files and directories and add to mediatidy database')
+program.command('clean')
+  .description('tidy up all those media files!')
   .action () ->
     media = new Media
 
