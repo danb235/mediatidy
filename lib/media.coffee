@@ -464,10 +464,10 @@ class Media extends Database
         regex = new RegExp(".*cd" + number, "gi")
         filteredFileName = filteredFileName.replace(regex, "pt" + number + "_" + filteredFileName)
 
-    # if show is multi episode: "Show - s02e05-e08.mkv"
-    if filteredFileName.match(/s\d{1,2}e\d{1,3}.*e\d{1,2}/i)
+    # if show is multi episode: "Show - s02e05-e08 - Ep Name.mkv"
+    if filteredFileName.match(/\w+s\d{1,2}e\d{1,3}.*e\d{1,2}/i)
       # remove all characters after s##e##
-      seasonAndEpisode = filteredFileName.match(/s\d{1,2}e\d{1,3}.*e\d{1,2}/i)[0]
+      seasonAndEpisode = filteredFileName.match(/\w+s\d{1,2}e\d{1,3}.*e\d{1,2}/i)[0]
       regex = new RegExp(seasonAndEpisode + ".*", "gi")
       filteredFileName = filteredFileName.replace(regex, seasonAndEpisode)
 
@@ -476,10 +476,10 @@ class Media extends Database
         c.charAt(0) + "0" + c.charAt(1)
       )
 
-    # if show episode: "Show - s02e05.mkv"
-    else if filteredFileName.match(/s\d{1,2}e\d{1,3}/i)
+    # if show episode: "Show - s02e05 - Ep Name.mkv"
+    else if filteredFileName.match(/^\w+s\d{1,2}e\d{1,3}/i)
       # remove all characters after s##e##
-      seasonAndEpisode = filteredFileName.match(/s\d{1,2}e\d{1,3}/i)[0]
+      seasonAndEpisode = filteredFileName.match(/\w+s\d{1,2}e\d{1,3}/i)[0]
       regex = new RegExp(seasonAndEpisode + ".*", "gi")
       filteredFileName = filteredFileName.replace(regex, seasonAndEpisode)
 
@@ -487,6 +487,49 @@ class Media extends Database
       filteredFileName = filteredFileName.replace(/[^0-9][0-9](?![0-9]+)/g, (c) ->
         c.charAt(0) + "0" + c.charAt(1)
       )
+
+    # # if show episode: "s02e05 - show - Ep Name.mkv"
+    # # this terrible naming only let's me guess the show name;
+    # # detect s##e## and keep the next 5 word characters for matching
+    # else if filteredFileName.match(/^s\d{1,2}e\d{1,3}/i)
+    #   console.log 's02e05 - show - Ep Name.mkv:', filteredFileName
+    #   # remove all characters after s##e##
+    #   seasonAndEpisode = filteredFileName.match(/s\d{1,2}e\d{1,3}\w{5}/i)[0]
+    #   regex = new RegExp(seasonAndEpisode, "gi")
+    #   filteredFileName = filteredFileName.replace(regex, seasonAndEpisode)
+    #
+      # # replace single digits with leading 0 double digit
+      # filteredFileName = filteredFileName.replace(/[^0-9][0-9](?![0-9]+)/g, (c) ->
+      #   c.charAt(0) + "0" + c.charAt(1)
+      # )
+
+    # issue matching first digit if 0
+    # # if show episode: "Show - 2x03 - Ep Name.mkv"
+    # else if filteredFileName.match(/^\w+[0-9]{1,2}x[0-9]{1,3}/i)
+    #   console.log 'Show - 2x03 - Ep Name.mkv:', filteredFileName
+    #   # remove all characters after s##e##
+    #   seasonAndEpisode = filteredFileName.match(/\w+[0-9]{1,2}x[0-9]{1,3}/i)[0]
+    #   regex = new RegExp(seasonAndEpisode + ".*", "gi")
+    #   filteredFileName = filteredFileName.replace(regex, seasonAndEpisode)
+    #
+    #   # replace single digits with leading 0 double digit
+    #   filteredFileName = filteredFileName.replace(/[^0-9][0-9](?![0-9]+)/g, (c) ->
+    #     c.charAt(0) + "0" + c.charAt(1)
+    #   )
+    #
+    # # if show episode: "2x03 - Show - Ep Name.mkv"
+    # else if filteredFileName.match(/^[0-9]{1,2}x[0-9]{1,3}/i)
+    #   # remove all characters after s##e##
+    #   console.log '2x03 - Show - Ep Name.mkv:', filteredFileName
+    #   seasonAndEpisodeAndShow = filteredFileName.match(/^[0-9]{1,2}x[0-9]{1,3}/i)[0]
+    #   regex = new RegExp(seasonAndEpisodeAndShow + "\w{5}", "gi")
+    #   filteredFileName = filteredFileName.replace(regex, seasonAndEpisode)
+    #
+    #   # replace single digits with leading 0 double digit
+    #   filteredFileName = filteredFileName.replace(/[^0-9][0-9](?![0-9]+)/g, (c) ->
+    #     c.charAt(0) + "0" + c.charAt(1)
+    #   )
+
 
     # if show has date: "Show.2014.04.10.mkv"
     else if filteredFileName.match(/[1880-2040]{4}\d{4}|\d{4}[1880-2040]{4}/g)
@@ -505,7 +548,7 @@ class Media extends Database
 
     # make all uppercase
     filteredFileName = filteredFileName.toUpperCase()
-    # console.log 'filtered:', filteredFileName
+    console.log 'filtered:', filteredFileName
     callback filteredFileName
 
   setup: (callback) ->
