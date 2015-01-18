@@ -39,7 +39,6 @@ $ brew install ffmpeg
 Be sure all [dependencies](#Dependencies) are install before installing **mediatidy**.
 
 ```
-$ sudo npm install -g coffee-script
 $ sudo npm install -g mediatidy
 ```
 
