@@ -9,7 +9,7 @@ async = require 'async'
 
 program.version(pkg.version)
 
-program.command('clean files')
+program.command('clean')
   .description('Let\'s tidy up those media files!')
   .action () ->
     media = new Media
@@ -45,7 +45,7 @@ program.command('clean files')
       console.log 'Your media files are looking mighty tidy!'
 
 program
-  .command('paths add')
+  .command('add-paths')
   .description('Add paths to media files for mediatidy to tidy up!')
   .action () ->
     config = new Config
@@ -62,7 +62,7 @@ program
       console.log 'Media path add complete.'
 
 program
-  .command('paths remove')
+  .command('remove-paths')
   .description('Remove all media paths from mediatidy')
   .action () ->
     config = new Config
@@ -79,7 +79,7 @@ program
       console.log 'All media paths have been removed from mediatidy.'
 
 program
-  .command('files remove')
+  .command('remove-files')
   .description('Remove all media file data from mediatidy database')
   .action () ->
     config = new Config
