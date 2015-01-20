@@ -61,11 +61,11 @@ $ mediatidy --help
 Add media folder to **mediatidy** you would like to process with:
 
 ```
-$ mediatidy paths-add
+$ mediatidy add-paths
 ```
 
 Let's tidy up those media files!
 
 ```
-$ mediatidy clean files
+$ mediatidy clean
 ```
