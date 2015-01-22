@@ -71,6 +71,12 @@ class Database
     db.close ->
       callback arrayLength
 
+  dbBulkMatchGet: (tag, callback) ->
+    db = new sqlite3.Database(@dbFile)
+    db.all "SELECT rowid AS id, regex, tag FROM CUSTOMMATCH WHERE tag=#{tag}", (err, rows) ->
+      db.close ->
+        callback rows
+
   dbBulkPathGet: (tag, callback) ->
     db = new sqlite3.Database(@dbFile)
     db.all "SELECT rowid AS id, path, tag FROM PATHS WHERE tag=#{tag}", (err, rows) ->
@@ -82,6 +88,18 @@ class Database
     db.run "DELETE FROM MEDIAFILES", ->
       db.close ->
         callback()
+
+  dbMatchAdd: (regex, tag, callback) ->
+    db = new sqlite3.Database(@dbFile)
+
+    # prepare sql statement
+    stmt = db.prepare("INSERT OR IGNORE INTO CUSTOMMATCH (regex, tag) VALUES (?,?)")
+    stmt.run regex, tag
+
+    # insert data into db
+    stmt.finalize
+    db.close ->
+      callback()
 
   dbPathAdd: (path, tag, callback) ->
     db = new sqlite3.Database(@dbFile)
@@ -111,6 +129,9 @@ class Database
           seriesCallback()
       (seriesCallback) ->
         db.run "CREATE TABLE IF NOT EXISTS PATHS (path TEXT UNIQUE, tag TEXT)", ->
+          seriesCallback()
+      (seriesCallback) ->
+        db.run "CREATE TABLE IF NOT EXISTS CUSTOMMATCH (regex TEXT UNIQUE, tag TEXT)", ->
           seriesCallback()
     ], (err, results) ->
       db.close ->

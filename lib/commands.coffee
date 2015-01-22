@@ -40,9 +40,29 @@ program.command('clean')
       (callback) ->
         media.deleteDupes ->
           callback()
+      # (callback) ->
+      #   media.deleteMatches ->
+          # callback()
     ], (err, results) ->
       throw err if err
       console.log 'Your media files are looking mighty tidy!'
+
+program
+  .command('add-matches')
+  .description('Add keywords (regular expression supported) used to find files to delete')
+  .action () ->
+    config = new Config
+
+    async.series [
+      (seriesCallback) ->
+        config.setup ->
+          seriesCallback()
+      (seriesCallback) ->
+        config.matchPrompt ->
+          seriesCallback()
+    ], (err, results) ->
+      throw err if err
+      console.log 'Media path add complete.'
 
 program
   .command('add-paths')

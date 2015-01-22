@@ -102,6 +102,61 @@ class Config extends Database
           console.log "Finished adding paths..."
           callback()
 
+  matchPrompt: (callback) ->
+    console.log '==> '.cyan.bold + 'update custom keywords to match files for mediatidy to tidy up!'
+    @matchPromptYesNo =>
+      callback()
+
+  matchPromptAdd: (callback) ->
+    prompt.message = "mediatidy".yellow
+    prompt.delimiter = ": ".green
+    prompt.properties =
+      string:
+        description: 'enter a keyword to match filenames to delete:'
+        pattern: /\w+/
+        required: true
+
+    prompt.start()
+    prompt.get ['string'], (error, result) =>
+      # remove trailing forward slash
+      @dbMatchAdd result.string, 'FILES', ->
+        callback()
+
+  matchPromptYesNo: (callback) ->
+    @dbBulkMatchGet '\'FILES\'', (array) =>
+      arrayLength = array.length
+      i = 0
+      while i < arrayLength
+        console.log "CURRENTLY MATCHING:".yellow, array[i].regex
+        i++
+
+      if arrayLength is 0
+        @matchPromptAdd =>
+          @matchPromptYesNo ->
+            callback()
+      else
+        prompt.message = "mediatidy".yellow
+        prompt.delimiter = ": ".green
+        prompt.properties =
+          yesno:
+            default: 'no'
+            message: 'Add another media path to mediatidy?'
+            required: true
+            warning: "Must respond yes or no"
+            validator: /y[es]*|n[o]?/
+
+        # Start the prompt
+        prompt.start()
+
+        # get the simple yes or no property
+        prompt.get ['yesno'], (err, result) =>
+          if result.yesno.match(/yes/i)
+            @matchPromptAdd =>
+              @matchPromptYesNo ->
+                callback()
+          else
+            console.log "Finished adding custom matches..."
+            callback()
 
   pathPrompt: (callback) ->
     console.log '==> '.cyan.bold + 'update paths to media files for mediatidy to tidy up!'
