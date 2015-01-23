@@ -11,6 +11,38 @@ _           = require 'lodash'
 
 class Media extends Database
 
+  addDirs: (callback) ->
+    console.log '==> '.cyan.bold + 'search for and add directories to database...'
+
+    # get base paths from db
+    @dbBulkPathGet '\'MEDIA\'', (array) =>
+      if array.length is 0
+        console.log "No paths have been added to mediatidy. Add paths to your media files with",
+          "\"mediatidy paths-update\"".red
+      else
+        # get files asynchronously for each 'MEDIA' path
+        async.eachSeries array, ((basePath, seriesCallback) =>
+
+          fs.exists basePath.path, (exists) =>
+            if exists
+              console.log basePath.path + ':', 'searching for directories...'
+
+              # get directories for given path
+              dir.subdirs basePath.path, (err, dirs) =>
+                throw err if err
+
+                @dbBulkDirsAdd dirs, (result) ->
+                  console.log basePath.path + ':', result, 'directories...'
+                  seriesCallback()
+            else
+              console.log basePath.path, 'could not be found. Consider updating media dirs...'
+              seriesCallback()
+        ), (err) ->
+          if err
+            console.log "Something broke when looking for directories...", err
+          else
+            callback()
+
   addFiles: (callback) ->
     console.log '==> '.cyan.bold + 'search for and add files to database...'
 
@@ -106,6 +138,30 @@ class Media extends Database
           callback arrayObjects
     else
       callback arrayObjects
+
+  checkDirExists: (array, callback) ->
+    # check that each directory path in database exists in the file system
+    missingDirs = []
+    arrayLength = array.length
+
+    dirExist = (iteration) =>
+      fs.exists array[iteration].path, (exists) =>
+        if exists is false
+          console.log 'MISSING DIR:'.yellow, array[iteration].path
+          missingDirs.push array[iteration].path
+        if arrayLength is iteration + 1 and missingDirs.length > 0
+          console.log missingDirs.length + ' out of ' + arrayLength + ' dirs removed from database...'
+          callback missingDirs
+        else if arrayLength is iteration + 1 and missingDirs.length is 0
+          console.log 'No dirs needed to be removed from database...'
+          callback missingDirs
+        else
+          dirExist(iteration + 1)
+    if arrayLength > 0
+      dirExist(0)
+    else
+      console.log 'No dirs in database to check...'
+      callback()
 
   checkExists: (array, callback) ->
     # check that each file path in database exists in the file system
@@ -290,8 +346,23 @@ class Media extends Database
   #     @promptUserBulkDelete files, promptMessage, ->
   #       callback()
 
-  exists: (callback) ->
-    console.log '==> '.cyan.bold + 'removing files and directories from database that no longer exist'
+  dirExists: (callback) ->
+    console.log '==> '.cyan.bold + 'removing directories from database that no longer exist'
+
+    # get all directories
+    @dbBulkDirsGetAll (dirs) =>
+      # check if dirs exist for a given path
+      @checkDirExists dirs, (missingDirs) =>
+        if missingDirs.length > 0
+          # remove missing files from database
+          @dbBulkDirsDelete missingDirs, ->
+            console.log 'finished removing missing dirs from mediatidy database'
+            callback()
+        else
+          callback()
+
+  fileExists: (callback) ->
+    console.log '==> '.cyan.bold + 'removing files from database that no longer exist'
 
     # get all files
     @dbBulkFileGetAll (files) =>

@@ -8,6 +8,42 @@ class Database
   #{process.env.HOME or process.env.HOMEPATH or process.env.USERPROFILE}/.mediatidy/data.db
   """
 
+  dbBulkDirsAdd: (array, callback) ->
+    db = new sqlite3.Database(@dbFile)
+
+    # prepare sql statement
+    stmt = db.prepare("INSERT OR IGNORE INTO DIRS (path, tag) VALUES (?,?)")
+    arrayLength = array.length
+    i = 0
+    while i < arrayLength
+      stmt.run array[i], 'DIR'
+      i++
+
+    # insert data into db
+    stmt.finalize
+    db.close ->
+      callback arrayLength
+
+  dbBulkDirsDelete: (array, callback) ->
+    db = new sqlite3.Database(@dbFile)
+    # prepare sql statement
+    stmt = db.prepare("DELETE FROM DIRS WHERE path=?")
+    arrayLength = array.length
+    i = 0
+    while i < arrayLength
+      stmt.run array[i]
+      i++
+
+    stmt.finalize
+    db.close ->
+      callback arrayLength
+
+  dbBulkDirsGetAll: (callback) ->
+    db = new sqlite3.Database(@dbFile)
+    db.all "SELECT rowid AS id, path, tag FROM DIRS", (err, rows) ->
+      db.close ->
+        callback rows
+
   dbBulkFileAdd: (array, callback) ->
     db = new sqlite3.Database(@dbFile)
 
@@ -108,6 +144,9 @@ class Database
       (seriesCallback) ->
         db.run "CREATE TABLE IF NOT EXISTS MEDIAFILES (path TEXT UNIQUE, tag TEXT, filename TEXT,
           width INT, height INT, size INT, duration INT)", ->
+          seriesCallback()
+      (seriesCallback) ->
+        db.run "CREATE TABLE IF NOT EXISTS DIRS (path TEXT UNIQUE, tag TEXT)", ->
           seriesCallback()
       (seriesCallback) ->
         db.run "CREATE TABLE IF NOT EXISTS PATHS (path TEXT UNIQUE, tag TEXT)", ->

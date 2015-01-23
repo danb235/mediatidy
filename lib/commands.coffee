@@ -23,7 +23,7 @@ program.command('clean')
         media.addFiles ->
           callback()
       (callback) ->
-        media.exists ->
+        media.fileExists ->
           callback()
       (callback) ->
         media.fileMetaUpdate ->
@@ -43,6 +43,26 @@ program.command('clean')
     ], (err, results) ->
       throw err if err
       console.log 'Your media files are looking mighty tidy!'
+
+program.command('clean-dirs')
+  .description('Let\'s tidy up those media directories!')
+  .action () ->
+    media = new Media
+
+    # Perform action in series with async
+    async.series [
+      (callback) ->
+        media.setup ->
+          callback()
+      (callback) ->
+        media.addDirs ->
+          callback()
+      (callback) ->
+        media.dirExists ->
+          callback()
+    ], (err, results) ->
+      throw err if err
+      console.log 'Your media directories are looking mighty tidy!'
 
 program
   .command('add-paths')
