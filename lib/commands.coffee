@@ -4,6 +4,7 @@ pkg = require '../package.json'
 program = require 'commander'
 Config = require '../lib/config'
 Media = require '../lib/media'
+Dirs = require '../lib/dirs'
 colors = require 'colors'
 async = require 'async'
 
@@ -13,12 +14,12 @@ program.command('clean')
   .description('Let\'s tidy up those media files!')
   .action () ->
     media = new Media
+    dirs = new Dirs
 
     # Perform action in series with async
     async.series [
-      (callback) ->
-        media.setup ->
-          callback()
+
+      # Clean files
       (callback) ->
         media.addFiles ->
           callback()
@@ -40,25 +41,35 @@ program.command('clean')
       (callback) ->
         media.deleteDupes ->
           callback()
+
+      # Clean dirs
+      (callback) ->
+        dirs.addDirs ->
+          callback()
+      (callback) ->
+        dirs.dirExists ->
+          callback()
+      (callback) ->
+        dirs.deleteEmptyDirs ->
+          callback()
     ], (err, results) ->
       throw err if err
-      console.log 'Your media files are looking mighty tidy!'
+      console.log 'Your media is looking mighty tidy!'
 
 program.command('clean-dirs')
   .description('Let\'s tidy up those media directories!')
   .action () ->
-    media = new Media
+    dirs = new Dirs
 
-    # Perform action in series with async
     async.series [
       (callback) ->
-        media.setup ->
+        dirs.addDirs ->
           callback()
       (callback) ->
-        media.addDirs ->
+        dirs.dirExists ->
           callback()
       (callback) ->
-        media.dirExists ->
+        dirs.deleteEmptyDirs ->
           callback()
     ], (err, results) ->
       throw err if err
@@ -89,9 +100,6 @@ program
 
     async.series [
       (seriesCallback) ->
-        config.setup ->
-          seriesCallback()
-      (seriesCallback) ->
         config.pathsDelete ->
           seriesCallback()
     ], (err, results) ->
@@ -105,9 +113,6 @@ program
     config = new Config
 
     async.series [
-      (seriesCallback) ->
-        config.setup ->
-          seriesCallback()
       (seriesCallback) ->
         config.filesDelete ->
           seriesCallback()
