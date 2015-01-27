@@ -12,10 +12,11 @@ Point **mediatidy** at your movie or TV show directory and it will do the follow
 * Delete all corrupt/incomplete video files.
 * Delete all sample files.
 * Process files to find dupes; keep the highest quality of the dupes and delete the rest.
+* Delete directories that are empty
 
 Coming soon:
 * Delete files under a specified size.
-* Tidy up your media directories.
+* Tidy up your media directories by keyword.
 * Media files view.
 * Ability to rename files.
 
