@@ -36,7 +36,7 @@ class Media extends Database
     @dbBulkPathGet '\'MEDIA\'', (array) =>
       if array.length is 0
         console.log "No paths have been added to mediatidy. Add paths to your media files with",
-          "\"mediatidy paths-update\"".red
+          "\"mediatidy add-paths\"".red
       else
         # get files asynchronously for each 'MEDIA' path
         async.eachSeries array, ((basePath, seriesCallback) =>
@@ -507,5 +507,34 @@ class Media extends Database
     filteredFileName = filteredFileName.toUpperCase()
     # console.log 'filtered:', filteredFileName
     callback filteredFileName
+
+  suite: (callback) ->
+    # Runs full suite of directory cleanup commands
+    async.series [
+      (callback) =>
+        @addFiles =>
+          callback()
+      (callback) =>
+        @fileExists =>
+          callback()
+      (callback) =>
+        @fileMetaUpdate =>
+          callback()
+      (callback) =>
+        @deleteCorrupt =>
+          callback()
+      (callback) =>
+        @deleteSamples =>
+          callback()
+      (callback) =>
+        @deleteOthers =>
+          callback()
+      (callback) =>
+        @deleteDupes =>
+          callback()
+    ], (err, results) =>
+      throw err if err
+      callback results
+
 
 module.exports = Media

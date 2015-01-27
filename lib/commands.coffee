@@ -11,46 +11,26 @@ async = require 'async'
 program.version(pkg.version)
 
 program.command('clean')
-  .description('Let\'s tidy up those media files!')
+  .description('Let\'s tidy up those media files and directories!')
   .action () ->
-    media = new Media
+    config = new Config
     dirs = new Dirs
+    media = new Media
 
     # Perform action in series with async
     async.series [
 
+      # Ensure db is setup
+      (callback) ->
+        config.setup ->
+          callback()
       # Clean files
       (callback) ->
-        media.addFiles ->
+        media.suite ->
           callback()
-      (callback) ->
-        media.fileExists ->
-          callback()
-      (callback) ->
-        media.fileMetaUpdate ->
-          callback()
-      (callback) ->
-        media.deleteCorrupt ->
-          callback()
-      (callback) ->
-        media.deleteSamples ->
-          callback()
-      (callback) ->
-        media.deleteOthers ->
-          callback()
-      (callback) ->
-        media.deleteDupes ->
-          callback()
-
       # Clean dirs
       (callback) ->
-        dirs.addDirs ->
-          callback()
-      (callback) ->
-        dirs.dirExists ->
-          callback()
-      (callback) ->
-        dirs.deleteEmptyDirs ->
+        dirs.suite ->
           callback()
     ], (err, results) ->
       throw err if err
@@ -59,21 +39,36 @@ program.command('clean')
 program.command('clean-dirs')
   .description('Let\'s tidy up those media directories!')
   .action () ->
+    config = new Config
     dirs = new Dirs
 
     async.series [
       (callback) ->
-        dirs.addDirs ->
+        config.setup ->
           callback()
       (callback) ->
-        dirs.dirExists ->
-          callback()
-      (callback) ->
-        dirs.deleteEmptyDirs ->
+        dirs.suite ->
           callback()
     ], (err, results) ->
       throw err if err
       console.log 'Your media directories are looking mighty tidy!'
+
+program.command('clean-files')
+  .description('Let\'s tidy up those media files!')
+  .action () ->
+    config = new Config
+    media = new Media
+
+    async.series [
+      (callback) ->
+        config.setup ->
+          callback()
+      (callback) ->
+        media.suite ->
+          callback()
+    ], (err, results) ->
+      throw err if err
+      console.log 'Your media files are looking mighty tidy!'
 
 program
   .command('add-paths')
@@ -82,12 +77,12 @@ program
     config = new Config
 
     async.series [
-      (seriesCallback) ->
+      (callback) ->
         config.setup ->
-          seriesCallback()
-      (seriesCallback) ->
+          callback()
+      (callback) ->
         config.pathPrompt ->
-          seriesCallback()
+          callback()
     ], (err, results) ->
       throw err if err
       console.log 'Media path add complete.'
@@ -99,9 +94,12 @@ program
     config = new Config
 
     async.series [
-      (seriesCallback) ->
+      (callback) ->
+        config.setup ->
+          callback()
+      (callback) ->
         config.pathsDelete ->
-          seriesCallback()
+          callback()
     ], (err, results) ->
       throw err if err
       console.log 'All media paths have been removed from mediatidy.'
@@ -113,9 +111,12 @@ program
     config = new Config
 
     async.series [
-      (seriesCallback) ->
+      (callback) ->
+        config.setup ->
+          callback()
+      (callback) ->
         config.filesDelete ->
-          seriesCallback()
+          callback()
     ], (err, results) ->
       throw err if err
       console.log 'All file data has been removed from mediatidy database.'

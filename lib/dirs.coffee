@@ -154,4 +154,20 @@ class Dirs extends Database
       console.log "No directories needed to be deleted..."
       callback()
 
+  suite: (callback) ->
+    # Runs full suite of directory cleanup commands
+    async.series [
+      (callback) =>
+        @addDirs =>
+          callback()
+      (callback) =>
+        @dirExists =>
+          callback()
+      (callback) =>
+        @deleteEmptyDirs =>
+          callback()
+    ], (err, results) =>
+      throw err if err
+      callback results
+
 module.exports = Dirs
