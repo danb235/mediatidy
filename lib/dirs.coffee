@@ -158,13 +158,13 @@ class Dirs extends Database
     # Runs full suite of directory cleanup commands
     async.series [
       (callback) =>
-        @addDirs =>
+        @addDirs ->
           callback()
       (callback) =>
-        @dirExists =>
+        @dirExists ->
           callback()
       (callback) =>
-        @deleteEmptyDirs =>
+        @deleteEmptyDirs ->
           callback()
     ], (err, results) =>
       throw err if err

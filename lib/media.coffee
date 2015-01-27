@@ -45,7 +45,7 @@ class Media extends Database
             if exists
               console.log basePath.path + ':', 'searching for files...'
               # get files for given path
-              dir.paths basePath.path, (err, paths) =>
+              dir.files basePath.path, (err, files) =>
                 throw err if err
 
                 # add files to db asynchronously
@@ -53,7 +53,7 @@ class Media extends Database
                   # add video files to db
                   (callback) =>
                     # filter files with video file extension
-                    @filterFileTypes paths.files, movieFileExtensions, (movieFiles) ->
+                    @filterFileTypes files, movieFileExtensions, (movieFiles) ->
                       callback null, movieFiles
                   (movieFiles, callback) =>
                     # convert array of files to array of objects
@@ -68,7 +68,7 @@ class Media extends Database
                   # add all other files to db
                   (callback) =>
                     # filter files without video extensions
-                    @filterFileTypesOpposite paths.files, movieFileExtensions, (otherFiles) ->
+                    @filterFileTypesOpposite files, movieFileExtensions, (otherFiles) ->
                       callback null, otherFiles
                   (otherFiles, callback) =>
                     # convert array of files to array of objects
@@ -509,32 +509,31 @@ class Media extends Database
     callback filteredFileName
 
   suite: (callback) ->
-    # Runs full suite of directory cleanup commands
+    # Runs full suite of file cleanup commands
     async.series [
       (callback) =>
-        @addFiles =>
+        @addFiles ->
           callback()
       (callback) =>
-        @fileExists =>
+        @fileExists ->
           callback()
       (callback) =>
-        @fileMetaUpdate =>
+        @fileMetaUpdate ->
           callback()
       (callback) =>
-        @deleteCorrupt =>
+        @deleteCorrupt ->
           callback()
       (callback) =>
-        @deleteSamples =>
+        @deleteSamples ->
           callback()
       (callback) =>
-        @deleteOthers =>
+        @deleteOthers ->
           callback()
       (callback) =>
-        @deleteDupes =>
+        @deleteDupes ->
           callback()
     ], (err, results) =>
       throw err if err
       callback results
-
 
 module.exports = Media
