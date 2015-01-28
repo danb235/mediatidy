@@ -503,7 +503,6 @@ class Media extends Database
     # if show has date: "Season 2/Show Name - 2014.04.10 - Ep Name.ext"
     else if filteredFileName.match(/[1880-2040]{4}\d{4}|\d{4}[1880-2040]{4}/g)
       # remove all characters after ####.##.##
-      console.log filteredFileName
       seasonAndEpisode = filteredFileName.match(/[1880-2040]{4}\d{4}|\d{4}[1880-2040]{4}/g)[0]
       regex = new RegExp(seasonAndEpisode + ".*", "gi")
       filteredFileName = filteredFileName.replace(regex, seasonAndEpisode)
