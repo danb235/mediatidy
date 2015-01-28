@@ -3,7 +3,7 @@
   "main": "index",
   "name": "mediatidy",
   "description": "A simple CLI tool to keep your media nice and tidy!",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "author": "Daniel Bohannon <tkdan235@gmail.com>",
   "repository": {
     "type": "git",
