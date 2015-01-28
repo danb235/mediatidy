@@ -35,7 +35,7 @@ TV shows should be have show name, followed by formatted season/episode, then sh
 * `Show Name - 02x03 - Ep Name.mkv`
 * `Show Name - 2014.03.07 - Ep Name.mkv`
 
-Without naming convention duplicate matching can get unreliable.  You do want to be tidy right?
+Without proper file naming conventions duplicate matching can be unreliable.  You do want to be tidy right?
 
 ## Setup
 ### Dependencies
