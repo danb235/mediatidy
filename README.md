@@ -29,7 +29,7 @@ Movies should have title followed by year:
 * `Movie Title - 1974.mkv`
 * `Movie Title 1974.mkv`
 
-TV shows should be have show name, followed by formatted season/episode, then show name:
+TV shows should be have show name, followed by formatted season/episode, then episode name:
 * `Show Name - S02E03 - Ep Name.mkv`
 * `Show Name - S02E03e01 - Ep Name.mkv`
 * `Show Name - 02x03 - Ep Name.mkv`
