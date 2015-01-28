@@ -20,9 +20,22 @@ Coming soon:
 * Media files view.
 * Ability to rename files.
 
-<!-- ## Current Assumptions
+## File Naming Assumptions
 
-* Your movie files follow a similar naming pattern (such as `Young Frankenstein (1974).mkv`) -->
+For dupe detection to work best your files should be properly named.  **mediatidy** works best with the following conventions:
+
+Movies should have title followed by year:
+* `Movie Title (1974).mkv`
+* `Movie Title - 1974.mkv`
+* `Movie Title 1974.mkv`
+
+TV shows should be have show name, followed by formatted season/episode, then show name:
+* `Show Name - S02E03 - Ep Name.mkv`
+* `Show Name - S02E03e01 - Ep Name.mkv`
+* `Show Name - 02x03 - Ep Name.mkv`
+* `Show Name - 2014.03.07 - Ep Name.mkv`
+
+Without naming convention duplicate matching can get unreliable.  You do want to be tidy right?
 
 ## Setup
 ### Dependencies

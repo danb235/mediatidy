@@ -464,7 +464,7 @@ class Media extends Database
         regex = new RegExp(".*cd" + number, "gi")
         filteredFileName = filteredFileName.replace(regex, "pt" + number + "_" + filteredFileName)
 
-    # if show is multi episode: "Show - s02e05-e08.mkv"
+    # if show is multi episode: "Season 2/Show Name - S02E03e01 - Ep Name.ext"
     if filteredFileName.match(/s\d{1,2}e\d{1,3}.*e\d{1,2}/i)
       # remove all characters after s##e##
       seasonAndEpisode = filteredFileName.match(/s\d{1,2}e\d{1,3}.*e\d{1,2}/i)[0]
@@ -476,7 +476,7 @@ class Media extends Database
         c.charAt(0) + "0" + c.charAt(1)
       )
 
-    # if show episode: "Show - s02e05.mkv"
+    # if show episode: "Season 2/Show Name - S02E03 - Ep Name.ext"
     else if filteredFileName.match(/s\d{1,2}e\d{1,3}/i)
       # remove all characters after s##e##
       seasonAndEpisode = filteredFileName.match(/s\d{1,2}e\d{1,3}/i)[0]
@@ -488,8 +488,22 @@ class Media extends Database
         c.charAt(0) + "0" + c.charAt(1)
       )
 
-    # if show has date: "Show.2014.04.10.mkv"
+    # if show episode: "Season 2/Show Name - 2x03 - Ep Name.ext"
+    else if filteredFileName.match(/\d{1,2}x\d{1,3}/i)
+      # remove all characters after ##x##
+      seasonAndEpisode = filteredFileName.match(/\d{1,2}x\d{1,3}/i)[0]
+      regex = new RegExp(seasonAndEpisode + ".*", "gi")
+      filteredFileName = filteredFileName.replace(regex, seasonAndEpisode)
+
+      # replace single digits with leading 0 double digit
+      filteredFileName = filteredFileName.replace(/[^0-9][0-9](?![0-9]+)/g, (c) ->
+        c.charAt(0) + "0" + c.charAt(1)
+      )
+
+    # if show has date: "Season 2/Show Name - 2014.04.10 - Ep Name.ext"
     else if filteredFileName.match(/[1880-2040]{4}\d{4}|\d{4}[1880-2040]{4}/g)
+      # remove all characters after ####.##.##
+      console.log filteredFileName
       seasonAndEpisode = filteredFileName.match(/[1880-2040]{4}\d{4}|\d{4}[1880-2040]{4}/g)[0]
       regex = new RegExp(seasonAndEpisode + ".*", "gi")
       filteredFileName = filteredFileName.replace(regex, seasonAndEpisode)
