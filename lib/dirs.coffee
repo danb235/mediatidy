@@ -85,6 +85,80 @@ class Dirs extends Database
       console.log 'No dirs in database to check...'
       callback()
 
+  getKeywordMatches: (keywords, dirs, callback) ->
+    matches = []
+    arrayLength = dirs.length
+
+    if arrayLength > 0
+      _.forEach dirs, (dir, iteration) =>
+        _.forEach keywords, (keyword) =>
+          if dir.path.indexOf(keyword.string) > 0
+            if (_.findIndex matches, 'path': dir.path) is -1
+              matches.push
+                path: dir.path
+                keyword: [keyword.string]
+            else
+              matches[_.findIndex matches, 'path': dir.path].keyword.push keyword.string
+      callback matches
+
+    else
+      console.log 'No dirs in database to check...'
+      callback()
+
+  promptUserKeywordDelete: (match, callback) ->
+
+    console.log "DELETE(?):".yellow, match.path,
+
+    # prompt.message = "mediatidy".yellow
+    prompt.delimiter = ": ".green
+    prompt.properties =
+      yesno:
+        default: 'no'
+        message: "Delete directory matching " + match.keyword + "?"
+        required: true
+        warning: "Must respond yes or no"
+        validator: /y[es]*|n[o]?/
+
+    # Start the prompt
+    prompt.start()
+
+    # get the simple yes or no property
+    prompt.get ['yesno'], (err, result) =>
+      if result.yesno.match(/yes/i)
+
+        dirDelete = (iteration) =>
+          fs.rmdir match.path, =>
+
+          # oddly throws errors when successful; fixme
+          # fs.unlink match.path, (err) =>
+          #   throw err if err
+
+            console.log "DELETED:".red, match.path
+
+            if arrayLength is iteration + 1
+              @dbDirDelete match.path, ->
+                callback()
+            else
+              dirDelete(iteration + 1)
+        dirDelete(0)
+
+      else
+        callback()
+
+  deleteUnwantedDirs: (callback) ->
+    console.log '==> '.cyan.bold + 'delete unwanted directories by keyword'
+    @dbBulkKeywordGet '\'DIR\'', (keywords) =>
+      @dbBulkDirsGetAll (dirs) =>
+        @getKeywordMatches keywords, dirs, (matches) =>
+          # Loop over sortedDupes asynchronously
+          deleteKeywordMatch = (iteration) =>
+            @promptUserKeywordDelete matches[iteration], ->
+              if matches.length is iteration + 1
+                callback()
+              else
+                deleteKeywordMatch(iteration + 1)
+          deleteKeywordMatch(0)
+
   deleteEmptyDirs: (callback) ->
     console.log '==> '.cyan.bold + 'delete directories that are empty'
     @dbBulkDirsGetAll (dirs) =>
@@ -165,6 +239,9 @@ class Dirs extends Database
           callback()
       (callback) =>
         @deleteEmptyDirs ->
+          callback()
+      (callback) =>
+        @deleteUnwantedDirs ->
           callback()
     ], (err, results) =>
       throw err if err

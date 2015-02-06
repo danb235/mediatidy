@@ -88,6 +88,23 @@ program
       console.log 'Media path add complete.'
 
 program
+  .command('add-keywords')
+  .description('Add keywords for mediatidy to use to tidy up directories!')
+  .action () ->
+    config = new Config
+
+    async.series [
+      (callback) ->
+        config.setup ->
+          callback()
+      (callback) ->
+        config.keywordPrompt ->
+          callback()
+    ], (err, results) ->
+      throw err if err
+      console.log 'Keyword add complete.'
+
+program
   .command('remove-paths')
   .description('Remove all media paths from mediatidy')
   .action () ->

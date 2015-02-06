@@ -107,17 +107,41 @@ class Database
     db.close ->
       callback arrayLength
 
+  dbBulkKeywordGet: (tag, callback) ->
+    db = new sqlite3.Database(@dbFile)
+    db.all "SELECT rowid AS id, string, tag FROM KEYWORDS WHERE tag=#{tag}", (err, rows) ->
+      db.close ->
+        callback rows
+
   dbBulkPathGet: (tag, callback) ->
     db = new sqlite3.Database(@dbFile)
     db.all "SELECT rowid AS id, path, tag FROM PATHS WHERE tag=#{tag}", (err, rows) ->
       db.close ->
         callback rows
 
+  dbDirDelete: (dir, callback) ->
+    db = new sqlite3.Database(@dbFile)
+    db.run "DELETE FROM DIRS WHERE path=#{dir}", ->
+      db.close ->
+        callback()
+
   dbFileTableDeleteAll: (callback) ->
     db = new sqlite3.Database(@dbFile)
     db.run "DELETE FROM MEDIAFILES", ->
       db.close ->
         callback()
+
+  dbKeywordAdd: (string, tag, callback) ->
+    db = new sqlite3.Database(@dbFile)
+
+    # prepare sql statement
+    stmt = db.prepare("INSERT OR IGNORE INTO KEYWORDS (string, tag) VALUES (?,?)")
+    stmt.run string, tag
+
+    # insert data into db
+    stmt.finalize
+    db.close ->
+      callback()
 
   dbPathAdd: (path, tag, callback) ->
     db = new sqlite3.Database(@dbFile)
@@ -150,6 +174,9 @@ class Database
           seriesCallback()
       (seriesCallback) ->
         db.run "CREATE TABLE IF NOT EXISTS PATHS (path TEXT UNIQUE, tag TEXT)", ->
+          seriesCallback()
+      (seriesCallback) ->
+        db.run "CREATE TABLE IF NOT EXISTS KEYWORDS (string TEXT UNIQUE, tag TEXT)", ->
           seriesCallback()
     ], (err, results) ->
       db.close ->

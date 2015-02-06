@@ -33,6 +33,63 @@ class Config extends Database
           console.log "No files were removed from mediatidy..."
           callback()
 
+  keywordPrompt: (callback) ->
+    console.log '==> '.cyan.bold + 'update keywords for mediatidy to use to tidy up directories!'
+    @keywordPromptYesNo =>
+      callback()
+
+  keywordPromptAdd: (callback) ->
+    prompt.message = "mediatidy".yellow
+    prompt.delimiter = ": ".green
+    prompt.properties =
+      keyword:
+        description: 'keyword for removal (example: x264)'
+        required: true
+
+    prompt.start()
+    prompt.get ['keyword'], (error, result) =>
+      # remove white space
+      result.keyword = result.keyword.replace(/\s/g, "")
+      @dbKeywordAdd result.keyword, 'DIR', ->
+        callback()
+
+  keywordPromptYesNo: (callback) ->
+    @dbBulkKeywordGet '\'DIR\'', (array) =>
+
+      arrayLength = array.length
+      i = 0
+      while i < arrayLength
+        console.log "CURRENT KEYWORD:".yellow, array[i].string
+        i++
+
+      if arrayLength is 0
+        @keywordPromptAdd =>
+          @keywordPromptYesNo ->
+            callback()
+      else
+        prompt.message = "mediatidy".yellow
+        prompt.delimiter = ": ".green
+        prompt.properties =
+          yesno:
+            default: 'no'
+            message: 'Add another keyword to mediatidy?'
+            required: true
+            warning: "Must respond yes or no"
+            validator: /y[es]*|n[o]?/
+
+        # Start the prompt
+        prompt.start()
+
+        # get the simple yes or no property
+        prompt.get ['yesno'], (err, result) =>
+          if result.yesno.match(/yes/i)
+            @keywordPromptAdd =>
+              @keywordPromptYesNo ->
+                callback()
+          else
+            console.log "Finished adding keywords..."
+            callback()
+
   pathsDelete: (callback) ->
     console.log '==> '.cyan.bold + 'remove all media paths from mediatidy'
 
