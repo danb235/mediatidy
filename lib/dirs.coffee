@@ -106,7 +106,6 @@ class Dirs extends Database
       callback()
 
   promptUserKeywordDelete: (match, callback) ->
-
     console.log "DELETE(?):".yellow, match.path,
 
     # prompt.message = "mediatidy".yellow
@@ -125,23 +124,10 @@ class Dirs extends Database
     # get the simple yes or no property
     prompt.get ['yesno'], (err, result) =>
       if result.yesno.match(/yes/i)
-
-        dirDelete = (iteration) =>
-          fs.rmdir match.path, =>
-
-          # oddly throws errors when successful; fixme
-          # fs.unlink match.path, (err) =>
-          #   throw err if err
-
-            console.log "DELETED:".red, match.path
-
-            if arrayLength is iteration + 1
-              @dbDirDelete match.path, ->
-                callback()
-            else
-              dirDelete(iteration + 1)
-        dirDelete(0)
-
+        fs.remove match.path, =>
+          console.log "DELETED:".red, match.path
+          @dbDirDelete '\'' + match.path + '\'', ->
+            callback()
       else
         callback()
 
@@ -150,14 +136,18 @@ class Dirs extends Database
     @dbBulkKeywordGet '\'DIR\'', (keywords) =>
       @dbBulkDirsGetAll (dirs) =>
         @getKeywordMatches keywords, dirs, (matches) =>
-          # Loop over sortedDupes asynchronously
-          deleteKeywordMatch = (iteration) =>
-            @promptUserKeywordDelete matches[iteration], ->
-              if matches.length is iteration + 1
-                callback()
-              else
-                deleteKeywordMatch(iteration + 1)
-          deleteKeywordMatch(0)
+          if matches.length is 0
+            console.log "No directories needed to be deleted..."
+            callback()
+          else
+            # Loop over sortedDupes asynchronously
+            deleteKeywordMatch = (iteration) =>
+              @promptUserKeywordDelete matches[iteration], ->
+                if matches.length is iteration + 1
+                  callback()
+                else
+                  deleteKeywordMatch(iteration + 1)
+            deleteKeywordMatch(0)
 
   deleteEmptyDirs: (callback) ->
     console.log '==> '.cyan.bold + 'delete directories that are empty'
