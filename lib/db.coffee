@@ -144,6 +144,12 @@ class Database
     db.close ->
       callback()
 
+  dbKeywordDelete: (tag, callback) ->
+    db = new sqlite3.Database(@dbFile)
+    db.run "DELETE FROM KEYWORDS WHERE tag=#{tag}", ->
+      db.close ->
+        callback()
+
   dbPathAdd: (path, tag, callback) ->
     db = new sqlite3.Database(@dbFile)
 

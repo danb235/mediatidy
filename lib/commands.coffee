@@ -119,7 +119,22 @@ program
           callback()
     ], (err, results) ->
       throw err if err
-      console.log 'All media paths have been removed from mediatidy.'
+
+program
+  .command('remove-keywords')
+  .description('Remove all keywords from mediatidy')
+  .action () ->
+    config = new Config
+
+    async.series [
+      (callback) ->
+        config.setup ->
+          callback()
+      (callback) ->
+        config.keywordsDelete ->
+          callback()
+    ], (err, results) ->
+      throw err if err
 
 program
   .command('remove-files')
@@ -136,7 +151,6 @@ program
           callback()
     ], (err, results) ->
       throw err if err
-      console.log 'All file data has been removed from mediatidy database.'
 
 program.parse(process.argv)
 

@@ -4,6 +4,7 @@ async       = require 'async'
 colors      = require 'colors'
 prompt      = require 'prompt'
 Database    = require './db'
+Config      = require './config'
 _           = require 'lodash'
 
 class Dirs extends Database
@@ -62,7 +63,7 @@ class Dirs extends Database
       dirExist(0)
     else
       console.log 'No dirs in database to check...'
-      callback()
+      callback missingDirs
 
   getEmptyDirs: (array, callback) ->
     # check that each directory path in database exists in the file system
@@ -92,7 +93,8 @@ class Dirs extends Database
     if arrayLength > 0
       _.forEach dirs, (dir, iteration) =>
         _.forEach keywords, (keyword) =>
-          if dir.path.indexOf(keyword.string) > 0
+          # Look for string and remove casing
+          if dir.path.toUpperCase().indexOf(keyword.string.toUpperCase()) > -1
             if (_.findIndex matches, 'path': dir.path) is -1
               matches.push
                 path: dir.path
@@ -134,27 +136,38 @@ class Dirs extends Database
   deleteUnwantedDirs: (callback) ->
     console.log '==> '.cyan.bold + 'delete unwanted directories by keyword'
     @dbBulkKeywordGet '\'DIR\'', (keywords) =>
-      @dbBulkDirsGetAll (dirs) =>
-        @getKeywordMatches keywords, dirs, (matches) =>
-          if matches.length is 0
-            console.log "No directories needed to be deleted..."
-            callback()
-          else
-            # Loop over sortedDupes asynchronously
-            deleteKeywordMatch = (iteration) =>
-              @promptUserKeywordDelete matches[iteration], ->
-                if matches.length is iteration + 1
-                  callback()
-                else
-                  deleteKeywordMatch(iteration + 1)
-            deleteKeywordMatch(0)
+      if keywords.length is 0
+        console.log "No keywords have been added to mediatidy. Add keywords to remove bad directories with",
+          "\"mediatidy add-keywords\"".red
+        callback()
+      else
+        @dbBulkDirsGetAll (dirs) =>
+          @getKeywordMatches keywords, dirs, (matches) =>
+            if !matches
+              callback()
+            else if matches.length is 0
+              console.log "No directories needed to be deleted..."
+              callback()
+            else
+              # Loop over sortedDupes asynchronously
+              deleteKeywordMatch = (iteration) =>
+                @promptUserKeywordDelete matches[iteration], ->
+                  if matches.length is iteration + 1
+                    callback()
+                  else
+                    deleteKeywordMatch(iteration + 1)
+              deleteKeywordMatch(0)
 
   deleteEmptyDirs: (callback) ->
     console.log '==> '.cyan.bold + 'delete directories that are empty'
     @dbBulkDirsGetAll (dirs) =>
       @getEmptyDirs dirs, (emptyDirs) =>
-        promptMessage = "Delete all directories that are empty?"
-        @promptUserBulkDelete emptyDirs, promptMessage, ->
+        # if no empty dirs then just callback
+        if emptyDirs
+          promptMessage = "Delete all directories that are empty?"
+          @promptUserBulkDelete emptyDirs, promptMessage, ->
+            callback()
+        else
           callback()
 
   dirExists: (callback) ->
