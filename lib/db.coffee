@@ -120,7 +120,6 @@ class Database
         callback rows
 
   dbDirDelete: (path, callback) ->
-    console.log path
     db = new sqlite3.Database(@dbFile)
     db.run "DELETE FROM DIRS WHERE path=#{path}", ->
       db.close ->
