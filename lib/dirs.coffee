@@ -46,8 +46,8 @@ class Dirs extends Database
     missingDirs = []
     arrayLength = array.length
 
-    dirExist = (iteration) =>
-      fs.exists array[iteration].path, (exists) =>
+    dirExist = (iteration) ->
+      fs.exists array[iteration].path, (exists) ->
         if exists is false
           console.log 'MISSING DIR:'.yellow, array[iteration].path
           missingDirs.push array[iteration].path
@@ -70,8 +70,8 @@ class Dirs extends Database
     emptyDirs = []
     arrayLength = array.length
 
-    dirEmpty = (iteration) =>
-      fs.readdir array[iteration].path, (err, files) =>
+    dirEmpty = (iteration) ->
+      fs.readdir array[iteration].path, (err, files) ->
         if files.length is 0
           emptyDirs.push array[iteration].path
         if arrayLength is iteration + 1 and emptyDirs.length > 0
@@ -91,8 +91,8 @@ class Dirs extends Database
     arrayLength = dirs.length
 
     if arrayLength > 0
-      _.forEach dirs, (dir, iteration) =>
-        _.forEach keywords, (keyword) =>
+      _.forEach dirs, (dir, iteration) ->
+        _.forEach keywords, (keyword) ->
           # Look for string and remove casing
           if dir.path.toUpperCase().indexOf(keyword.string.toUpperCase()) > -1
             if (_.findIndex matches, 'path': dir.path) is -1
@@ -246,7 +246,7 @@ class Dirs extends Database
       (callback) =>
         @deleteUnwantedDirs ->
           callback()
-    ], (err, results) =>
+    ], (err, results) ->
       throw err if err
       callback results
 
