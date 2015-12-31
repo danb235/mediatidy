@@ -509,9 +509,16 @@ class Media extends Database
       )
 
     # if show has date: "Season 2/Show Name - 2014.04.10 - Ep Name.ext"
-    else if filteredFileName.match(/[1880-2040]{4}\d{4}|\d{4}[1880-2040]{4}/g)
+    else if filteredFileName.match(/(18\d{2}|19\d{2}|20\d{2})\d{4}/g)
       # remove all characters after ####.##.##
-      seasonAndEpisode = filteredFileName.match(/[1880-2040]{4}\d{4}|\d{4}[1880-2040]{4}/g)[0]
+      seasonAndEpisode = filteredFileName.match(/(18\d{2}|19\d{2}|20\d{2})\d{4}/g)[0]
+      regex = new RegExp(seasonAndEpisode + ".*", "gi")
+      filteredFileName = filteredFileName.replace(regex, seasonAndEpisode)
+
+    # if show has date: "Season 2/Show Name - 04.10.2014 - Ep Name.ext"
+    else if filteredFileName.match(/\d{4}(18\d{2}|19\d{2}|20\d{2})/g)
+      # remove all characters after ##.##.####
+      seasonAndEpisode = filteredFileName.match(/\d{4}(18\d{2}|19\d{2}|20\d{2})/g)[0]
       regex = new RegExp(seasonAndEpisode + ".*", "gi")
       filteredFileName = filteredFileName.replace(regex, seasonAndEpisode)
 
