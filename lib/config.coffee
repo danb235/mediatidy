@@ -26,7 +26,7 @@ class Config extends Database
       # get the simple yes or no property
       prompt.get ['yesno'], (err, result) =>
         if result.yesno.match(/yes/i)
-          @dbFileTableDeleteAll =>
+          @dbFileTableDeleteAll ->
             console.log "All files removed from mediatidy..."
             callback()
         else
@@ -35,7 +35,7 @@ class Config extends Database
 
   keywordPrompt: (callback) ->
     console.log '==> '.cyan.bold + 'update keywords for mediatidy to use to tidy up directories!'
-    @keywordPromptYesNo =>
+    @keywordPromptYesNo ->
       callback()
 
   keywordPromptAdd: (callback) ->
@@ -117,7 +117,7 @@ class Config extends Database
       # get the simple yes or no property
       prompt.get ['yesno'], (err, result) =>
         if result.yesno.match(/yes/i)
-          @dbKeywordDelete '\'DIR\'', =>
+          @dbKeywordDelete '\'DIR\'', ->
             console.log "All keywords removed..."
             callback()
         else
@@ -153,7 +153,7 @@ class Config extends Database
       # get the simple yes or no property
       prompt.get ['yesno'], (err, result) =>
         if result.yesno.match(/yes/i)
-          @dbPathDelete '\'MEDIA\'', =>
+          @dbPathDelete '\'MEDIA\'', ->
             console.log "All media paths removed..."
             callback()
         else
@@ -194,7 +194,7 @@ class Config extends Database
 
   pathPrompt: (callback) ->
     console.log '==> '.cyan.bold + 'update paths to media files for mediatidy to tidy up!'
-    @pathPromptYesNo =>
+    @pathPromptYesNo ->
       callback()
 
   pathPromptAdd: (callback) ->

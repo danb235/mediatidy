@@ -112,8 +112,8 @@ class Media extends Database
     missingFiles = []
     arrayLength = array.length
 
-    fileExist = (iteration) =>
-      fs.exists array[iteration].path, (exists) =>
+    fileExist = (iteration) ->
+      fs.exists array[iteration].path, (exists) ->
         if exists is false
           console.log 'MISSING FILE:'.yellow, array[iteration].path
           missingFiles.push array[iteration]
@@ -147,7 +147,7 @@ class Media extends Database
         (callback) ->
           # collect dupes by adding them their filtered_filename as a key
           objectStore = {}
-          _.forEach array, (file, iteration) =>
+          _.forEach array, (file, iteration) ->
             objectStore[file.filtered_filename] = [] unless objectStore.hasOwnProperty(file.filtered_filename)
             objectStore[file.filtered_filename].push file
 
@@ -158,7 +158,7 @@ class Media extends Database
           possibleDupes = []
           objectLength = _.size(objectStore)
           count = 1
-          _.forEach objectStore, (fileCollection) =>
+          _.forEach objectStore, (fileCollection) ->
             if fileCollection.length > 1
               possibleDupes.push fileCollection
             if count is objectLength
@@ -174,11 +174,13 @@ class Media extends Database
   promptUserDupeDelete: (array, callback) ->
     arrayLength = array.length
 
-    _.forEach array, (file, j) =>
+    _.forEach array, (file, j) ->
       if j is 0
-        console.log "KEEP:     ".green, file.path, "resolution:", file.width+"x"+file.height, "size:", prettyBytes(file.size)
+        console.log "KEEP:     ".green, file.path, "resolution:",
+          file.width+"x"+file.height, "size:", prettyBytes(file.size)
       else
-        console.log "DELETE(?):".yellow, file.path, "resolution:", file.width+"x"+file.height, "size:", prettyBytes(file.size)
+        console.log "DELETE(?):".yellow, file.path, "resolution:",
+          file.width+"x"+file.height, "size:", prettyBytes(file.size)
 
     prompt.message = "mediatidy".yellow
     prompt.delimiter = ": ".green
@@ -222,7 +224,7 @@ class Media extends Database
   dupeSort: (array, callback) ->
     # sort arrays
     sortedDupes = []
-    _.forEach array, (dupes, i) =>
+    _.forEach array, (dupes, i) ->
 
       # sort files by size
       dupes.sort (a, b) ->
@@ -237,7 +239,7 @@ class Media extends Database
     filteredFiles = []
     _.forEach array, (file, i) =>
 
-      @regexFilter file.filename, (filteredFileName) =>
+      @regexFilter file.filename, (filteredFileName) ->
         file.filtered_filename = filteredFileName
         filteredFiles.push file
 
@@ -335,8 +337,8 @@ class Media extends Database
       total: arrayLength
     )
 
-    singleFileProbe = (iteration) =>
-      probe array[iteration].path, (err, probeData) =>
+    singleFileProbe = (iteration) ->
+      probe array[iteration].path, (err, probeData) ->
 
         # tag corrupt files
         if typeof probeData is "undefined" or probeData["streams"].length is 0
@@ -355,7 +357,7 @@ class Media extends Database
           array[iteration].filename = probeData.filename
 
           # loop through video streams to find needed stream info
-          async.eachSeries probeData["streams"], (stream, streamCallback) =>
+          async.eachSeries probeData["streams"], (stream, streamCallback) ->
             if stream.codec_type is "video"
               if typeof stream.width is "number" and stream.width > 0
                 # add relevent date to object
@@ -462,7 +464,7 @@ class Media extends Database
     # detect if file is a part and place in front of filter string
     if filteredFileName.match(/pt[1-9]|part[1-9]|cd[1-9]/gi)
       stringNumber = [1..9]
-      _.forEach stringNumber, (number) =>
+      _.forEach stringNumber, (number) ->
         regex = new RegExp(".*pt" + number, "gi")
         filteredFileName = filteredFileName.replace(regex, "pt" + number + "_" + filteredFileName)
         regex = new RegExp(".*part" + number, "gi")
@@ -516,11 +518,11 @@ class Media extends Database
     # if movie based on year in filename
     else if filteredFileName.match(/\d{4}/i)
       years = [1880..2040]
-      _.forEach years, (year) =>
+      _.forEach years, (year) ->
         # ensure that a character exists before the year (hence indexOf 0)
         if filteredFileName.indexOf(year) > 0
           regex = new RegExp(year + ".*", "gi")
-          filteredFileName = filteredFileName.replace(regex, year);
+          filteredFileName = filteredFileName.replace regex, year
 
     # make all uppercase
     filteredFileName = filteredFileName.toUpperCase()
@@ -551,7 +553,7 @@ class Media extends Database
       (callback) =>
         @deleteDupes ->
           callback()
-    ], (err, results) =>
+    ], (err, results) ->
       throw err if err
       callback results
 
