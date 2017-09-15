@@ -1,5 +1,7 @@
 # mediatidy
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/tkdan235/mediatidy.svg)](https://greenkeeper.io/)
+
 For anyone with a large media collection (movies and tv shows) who craves file organization,
 **mediatidy** is a project that helps you keep your content... tidy.
 
