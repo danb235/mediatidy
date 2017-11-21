@@ -1,32 +1,52 @@
 version: 2
 jobs:
   build:
-    working_directory: ~/mediatidy
     docker:
       - image: circleci/node:7.10.0
     steps:
       - checkout
-      - restore_cache:
-          key: dependency-cache-{{ checksum "package.json" }}
-      - run:
-          name: install packages
-          command: npm install
-      - save_cache:
-          key: dependency-cache-{{ checksum "package.json" }}
-          paths:
-            - node_modules
+      - run: npm install
   test:
     docker:
       - image: circleci/node:7.10.0
     steps:
       - checkout
-      - run:
-          name: Test
-          command: ./bin/mediatidy clean
-
+      - run: npm install
 workflows:
   version: 2
   build_and_test:
     jobs:
       - build
       - test
+# version: 2
+# jobs:
+#   build:
+#     working_directory: ~/mediatidy
+#     docker:
+#       - image: circleci/node:7.10.0
+#     steps:
+#       - checkout
+#       - restore_cache:
+#           key: dependency-cache-{{ checksum "package.json" }}
+#       - run:
+#           name: install packages
+#           command: npm install
+#       - save_cache:
+#           key: dependency-cache-{{ checksum "package.json" }}
+#           paths:
+#             - node_modules
+#   test:
+#     docker:
+#       - image: circleci/node:7.10.0
+#     steps:
+#       - checkout
+#       - run:
+#           name: Test
+#           command: ./bin/mediatidy clean
+#
+# workflows:
+#   version: 2
+#   build_and_test:
+#     jobs:
+#       - build
+#       - test
