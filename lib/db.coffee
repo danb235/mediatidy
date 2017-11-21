@@ -1,5 +1,6 @@
 sqlite3 = require("sqlite3").verbose()
 async = require 'async'
+fs = require 'fs-extra'
 
 class Database
 
@@ -168,24 +169,35 @@ class Database
         callback()
 
   dbSetup: (callback) ->
-    db = new sqlite3.Database(@dbFile)
+    # create path to home folder mediatidy path
+    dir = """
+    #{process.env.HOME or process.env.HOMEPATH or process.env.USERPROFILE}/.mediatidy
+    """
 
-    async.series [
-      (seriesCallback) ->
-        db.run "CREATE TABLE IF NOT EXISTS MEDIAFILES (path TEXT UNIQUE, tag TEXT, filename TEXT,
-          width INT, height INT, size INT, duration INT)", ->
-          seriesCallback()
-      (seriesCallback) ->
-        db.run "CREATE TABLE IF NOT EXISTS DIRS (path TEXT UNIQUE, tag TEXT)", ->
-          seriesCallback()
-      (seriesCallback) ->
-        db.run "CREATE TABLE IF NOT EXISTS PATHS (path TEXT UNIQUE, tag TEXT)", ->
-          seriesCallback()
-      (seriesCallback) ->
-        db.run "CREATE TABLE IF NOT EXISTS KEYWORDS (string TEXT UNIQUE, tag TEXT)", ->
-          seriesCallback()
-    ], (err, results) ->
-      db.close ->
-        callback()
+    # create mediatidy directory
+    fs.ensureDir dir, (error) =>
+      if error then throw error
+
+      # init sqlite3
+      db = new sqlite3.Database(@dbFile)
+
+      # create tables
+      async.series [
+        (seriesCallback) ->
+          db.run "CREATE TABLE IF NOT EXISTS MEDIAFILES (path TEXT UNIQUE, tag TEXT, filename TEXT,
+            width INT, height INT, size INT, duration INT)", ->
+            seriesCallback()
+        (seriesCallback) ->
+          db.run "CREATE TABLE IF NOT EXISTS DIRS (path TEXT UNIQUE, tag TEXT)", ->
+            seriesCallback()
+        (seriesCallback) ->
+          db.run "CREATE TABLE IF NOT EXISTS PATHS (path TEXT UNIQUE, tag TEXT)", ->
+            seriesCallback()
+        (seriesCallback) ->
+          db.run "CREATE TABLE IF NOT EXISTS KEYWORDS (string TEXT UNIQUE, tag TEXT)", ->
+            seriesCallback()
+      ], (err, results) ->
+        db.close ->
+          callback()
 
 module.exports = Database
