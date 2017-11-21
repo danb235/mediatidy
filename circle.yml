@@ -19,7 +19,7 @@ machine:
 ## Customize dependencies
 dependencies:
   pre:
-    - yum install ffmpeg
+    - apt-get install ffmpeg
 
 ## Customize test commands
 # test:
