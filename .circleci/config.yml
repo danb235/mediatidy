@@ -15,14 +15,14 @@ jobs:
           key: dependency-cache-{{ checksum "package.json" }}
           paths:
             - node_modules
-    test:
-      docker:
-        - image: circleci/node:7.10.0
-      steps:
-        - checkout
-        - run:
-            name: Test
-            command: ./bin/mediatidy clean
+  test:
+    docker:
+      - image: circleci/node:7.10.0
+    steps:
+      - checkout
+      - run:
+          name: Test
+          command: ./bin/mediatidy clean
 
 workflows:
   version: 2
