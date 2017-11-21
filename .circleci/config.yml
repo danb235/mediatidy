@@ -23,7 +23,7 @@ workflows:
             - build
           filters:
             branches:
-              only: master
+              only: /./
 # version: 2
 # jobs:
 #   build:
