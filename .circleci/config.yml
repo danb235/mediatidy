@@ -21,6 +21,9 @@ workflows:
       - test:
           requires:
             - build
+          filters:
+            branches:
+              only: ci
 # version: 2
 # jobs:
 #   build:
