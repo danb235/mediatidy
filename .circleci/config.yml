@@ -1,3 +1,6 @@
+## Set circleci version to build on
+version: 1
+
 ## Customize the test machine
 machine:
 
