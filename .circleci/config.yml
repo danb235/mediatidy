@@ -18,6 +18,9 @@ workflows:
     jobs:
       - build
       - test
+        filters:
+          branches:
+            only: /.*/
 # version: 2
 # jobs:
 #   build:
