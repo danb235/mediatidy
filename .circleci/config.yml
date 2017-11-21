@@ -4,9 +4,17 @@ jobs:
     working_directory: ~/mediatidy
     # The primary container is an instance of the first list image listed. Your build commands run in this container.
     docker:
-      - image: circleci/node:latest
+      - image: circleci/node:7.10.0
     steps:
       - checkout
+
+      - setup_docker_engine:
+          reusable: true
+
       - run:
           name: install packages
           command: npm install
+
+      - run:
+          name: Test
+          command: ./bin/mediatidy clean
