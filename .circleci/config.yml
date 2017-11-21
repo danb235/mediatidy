@@ -12,16 +12,18 @@ jobs:
     steps:
       - checkout
       - run: npm install
-      
+
 workflows:
   version: 2
   build_and_test:
     jobs:
       - build
-      - test
-        filters:
-          branches:
-            only: /.*/
+      - test:
+          requires:
+            - build
+          filters:
+            branches:
+              only: master
 # version: 2
 # jobs:
 #   build:
